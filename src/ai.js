@@ -41,7 +41,7 @@ function getModel() {
   return genModel;
 }
 
-const SYSTEM_PROMPT = `You are a music recommendation AI in a YouTube music player. Suggest songs based on the user's request and history.
+const SYSTEM_PROMPT = `You are Resonance AI, a music recommendation assistant. Suggest songs based on the user's request and history.
 Respond with ONLY valid JSON: {"message":"short friendly reply","suggestions":[{"query":"Artist - Song Title","reason":"brief reason"}]}
 Include 5-6 suggestions. Be specific with artist + song title. If unrelated to music, redirect politely.`;
 

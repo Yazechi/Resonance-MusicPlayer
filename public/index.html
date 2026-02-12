@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Music Player</title>
+  <title>Resonance</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -118,7 +118,7 @@
       background: linear-gradient(145deg, var(--panel), #0f0f12);
       display: flex;
       flex-direction: column;
-      min-height: 320px;
+      height: 380px;
     }
     #playerLoading {
       position: absolute; inset: 0; z-index: 10;
@@ -273,7 +273,7 @@
   </style>
 </head>
 <body>
-  <h1><span style="font-size: 20px;">🎵</span> Music Player</h1>
+  <h1><span style="font-size: 20px;">🎵</span> Resonance</h1>
 
   <!-- ===== SEARCH VIEW ===== -->
   <div id="searchView">
@@ -615,11 +615,11 @@
     requestAnimationFrame(tick);
   </script>
   <!-- ===== AI CHAT PANEL ===== -->
-  <button id="chatToggle" title="Ask Copilot for music">🤖</button>
+  <button id="chatToggle" title="Ask Resonance AI for music">🤖</button>
   <div id="chatPanel">
     <div id="chatHeader">
       <span style="font-size:14px;">✨</span>
-      <h3>Music AI</h3>
+      <h3>Resonance AI</h3>
       <span class="tag">Gemini</span>
     </div>
     <div id="chatMessages">
@@ -655,7 +655,7 @@
       // Typing indicator
       const typing = document.createElement("div");
       typing.className = "chat-typing";
-      typing.textContent = "Copilot is thinking…";
+      typing.textContent = "Resonance is thinking…";
       chatMessages.appendChild(typing);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 

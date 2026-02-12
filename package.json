@@ -1,9 +1,9 @@
 {
-  "name": "copilot-youtube-music-cli",
+  "name": "resonance",
   "version": "0.1.0",
   "type": "module",
   "main": "src/server.js",
-  "description": "Copilot-accessible CLI that plays YouTube audio via mpv/yt-dlp",
+  "description": "Resonance — YouTube music player with AI-powered recommendations",
   "scripts": {
     "start": "node src/server.js",
     "cli": "node src/index.js",

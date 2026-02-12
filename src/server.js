@@ -127,5 +127,5 @@ app.get("*", (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Music app listening on http://localhost:${PORT}`);
+  console.log(`Resonance listening on http://localhost:${PORT}`);
 });

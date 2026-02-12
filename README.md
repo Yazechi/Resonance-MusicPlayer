@@ -1,4 +1,4 @@
-# 🎵 Online Music Player
+# 🎵 Resonance
 
 A full-featured web-based music player that streams audio from YouTube, powered by `yt-dlp` + `mpv` with AI-driven song recommendations via Google Gemini.
 
@@ -16,7 +16,7 @@ A full-featured web-based music player that streams audio from YouTube, powered 
 | ⏯️ **Full Playback Controls** | Play, pause, resume, stop, seek, and volume — all from the browser |
 | 📊 **Animated Visualizer** | Wave-based audio visualizer that responds to playback state |
 | 🕐 **Progress Slider** | Draggable timeline with real-time position tracking and seek |
-| 🤖 **AI Recommendations** | Chat with Copilot Music AI to discover songs by mood, genre, or vibe |
+| 🤖 **AI Recommendations** | Chat with Resonance AI to discover songs by mood, genre, or vibe |
 | 📝 **Listening History** | Automatically tracks plays to personalize future AI suggestions |
 | 🎵 **Related Music** | Sidebar with similar songs based on the currently playing track |
 | 💻 **CLI Mode** | Command-line interface for quick terminal-based playback |
@@ -229,7 +229,7 @@ Responses come as JSON lines on stdout:
 
 ### Copilot CLI MCP config
 
-To let GitHub Copilot CLI control the music player, add to your MCP config (`~/.config/copilot/mcp.json`):
+To let GitHub Copilot CLI control Resonance, add to your MCP config (`~/.config/copilot/mcp.json`):
 
 ```json
 {
