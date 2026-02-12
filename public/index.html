@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Music Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090b;
+      --panel: #18181b;
+      --panel-2: #1c1c20;
+      --accent: #6366f1;
+      --accent-2: #8b5cf6;
+      --accent-glow: rgba(99,102,241,0.25);
+      --text: #fafafa;
+      --muted: #71717a;
+      --border: rgba(255,255,255,0.08);
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 12px 16px;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    h1 { 
+      font-size: 18px; 
+      font-weight: 600; 
+      margin-bottom: 12px; 
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel {
+      background: var(--panel);
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .flex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    button {
+      background: var(--accent);
+      color: white; border: none;
+      padding: 7px 12px; border-radius: var(--radius-sm);
+      cursor: pointer; font-weight: 500; font-size: 12px;
+      transition: all 150ms ease;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    button:hover:not(:disabled) { background: var(--accent-2); transform: translateY(-1px); }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.secondary { background: rgba(255,255,255,0.08); }
+    button.secondary:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+    button.icon { padding: 7px 9px; font-size: 14px; }
+    input[type="text"] {
+      padding: 8px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: rgba(0,0,0,0.3);
+      color: var(--text); width: min(400px, 100%); font-size: 13px; outline: none;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+    .result {
+      display: flex; gap: 10px; padding: 8px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      align-items: center; background: rgba(0,0,0,0.2); margin-bottom: 6px;
+      transition: all 150ms ease;
+    }
+    .result:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+    .result img { width: 72px; height: 40px; object-fit: cover; border-radius: 4px; background: #000; }
+    .result-info { flex: 1; min-width: 0; }
+    .result-title { font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tag { color: var(--muted); font-size: 11px; }
+    .muted { color: var(--muted); }
+    .error { color: #ef4444; font-size: 12px; }
+    .badge {
+      display: inline-block;
+      background: rgba(99,102,241,0.15); color: var(--accent);
+      padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #searchingOverlay { display: none; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+    .hidden { display: none !important; }
+
+    /* --- Custom scrollbar --- */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* --- Player layout --- */
+    .player-grid {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 10px;
+      align-items: start;
+    }
+    @media (max-width: 800px) { .player-grid { grid-template-columns: 1fr; } }
+
+    #hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, var(--panel), #0f0f12);
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+    }
+    #playerLoading {
+      position: absolute; inset: 0; z-index: 10;
+      display: none;
+      background: rgba(0,0,0,0.6);
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #playerLoading .spinner { width: 28px; height: 28px; border-width: 3px; }
+
+    /* --- Visualizer: fills the hero card --- */
+    #vizContainer {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      padding: 12px 12px 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .viz-bar {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      height: 4px;
+      transition: height 200ms ease;
+      opacity: 0.25;
+    }
+    #vizContainer.playing .viz-bar { opacity: 0.9; }
+
+    #heroMeta { padding: 10px 12px 12px; }
+    #heroTitle { font-size: 15px; font-weight: 600; margin: 4px 0 2px; }
+    #heroUploader { color: var(--muted); margin: 0 0 10px; font-size: 12px; }
+
+    /* --- Progress slider --- */
+    .progress-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+    .progress-row .time { min-width: 36px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .progress-row .time.right { text-align: right; }
+    input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; cursor: pointer; }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent); margin-top: -4px;
+      box-shadow: 0 0 8px var(--accent-glow);
+      transition: transform 150ms ease;
+    }
+    input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+    input[type="range"]::-moz-range-track {
+      height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent); border: none;
+    }
+
+    .controls-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .vol-label { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; margin-left: auto; }
+    .vol-label input[type="range"] { width: 80px; }
+
+    /* --- Recs sidebar --- */
+    .rec-item {
+      display: flex; gap: 8px; margin-bottom: 6px; align-items: center;
+      background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px;
+      transition: all 150ms ease;
+    }
+    .rec-item:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+    .rec-item img { width: 48px; height: 28px; object-fit: cover; border-radius: 4px; }
+    .rec-title { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rec-tag { font-size: 10px; color: var(--muted); }
+
+    .pager { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 8px; }
+
+    /* --- AI Chat Panel --- */
+    #chatToggle {
+      position: fixed; bottom: 16px; right: 16px; z-index: 100;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #10b981, var(--accent));
+      border: none; cursor: pointer; font-size: 18px;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+      transition: all 150ms ease;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #chatToggle:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
+    #chatPanel {
+      position: fixed; bottom: 72px; right: 16px; z-index: 99;
+      width: 340px; max-height: 440px;
+      background: var(--panel);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: none; flex-direction: column; overflow: hidden;
+    }
+    #chatPanel.open { display: flex; }
+    #chatHeader {
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(16,185,129,0.05);
+    }
+    #chatHeader h3 { margin: 0; font-size: 13px; font-weight: 600; flex: 1; }
+    #chatHeader .tag { color: #10b981; font-size: 10px; }
+    #chatMessages {
+      flex: 1; overflow-y: auto; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 8px;
+      min-height: 160px; max-height: 280px;
+    }
+    .chat-msg {
+      max-width: 88%; padding: 8px 12px; border-radius: var(--radius-sm);
+      font-size: 12px; line-height: 1.5; word-wrap: break-word;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: white; border-bottom-right-radius: 2px;
+    }
+    .chat-msg.ai {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.05); color: var(--text);
+      border-bottom-left-radius: 2px;
+    }
+    .chat-msg.ai .suggestion-btn {
+      display: inline-block; margin: 4px 4px 0 0;
+      padding: 3px 8px; border-radius: 4px; font-size: 10px;
+      background: rgba(16,185,129,0.15); color: #6ee7b7;
+      border: 1px solid rgba(16,185,129,0.2); cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .chat-msg.ai .suggestion-btn:hover { background: rgba(16,185,129,0.25); }
+    #chatInputRow {
+      padding: 8px 10px; border-top: 1px solid var(--border);
+      display: flex; gap: 6px;
+    }
+    #chatInput {
+      flex: 1; padding: 8px 10px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: rgba(0,0,0,0.3);
+      color: var(--text); font-size: 12px; outline: none;
+    }
+    #chatInput:focus { border-color: #10b981; }
+    #chatSend {
+      padding: 8px 12px; border-radius: var(--radius-sm);
+      background: #10b981;
+      border: none; color: white; cursor: pointer; font-weight: 500; font-size: 12px;
+    }
+    #chatSend:hover { background: #059669; }
+    #chatSend:disabled { opacity: 0.4; cursor: not-allowed; }
+    .chat-typing { color: var(--muted); font-size: 11px; font-style: italic; padding: 2px 0; }
+  </style>
+</head>
+<body>
+  <h1><span style="font-size: 20px;">🎵</span> Music Player</h1>
+
+  <!-- ===== SEARCH VIEW ===== -->
+  <div id="searchView">
+    <div class="panel flex">
+      <input id="searchInput" type="text" placeholder="Search for music..." />
+      <button id="searchBtn">Search</button>
+      <div id="searchingOverlay"><span class="spinner"></span> Searching</div>
+      <span id="searchError" class="error"></span>
+    </div>
+    <div class="panel">
+      <div class="flex" style="justify-content: space-between; margin-bottom: 6px;">
+        <h3 style="margin:0;font-size:13px;font-weight:600;">Results</h3>
+        <span class="muted" id="resultsCount" style="font-size:11px;"></span>
+      </div>
+      <div id="results"></div>
+      <div class="pager" id="pager"></div>
+    </div>
+  </div>
+
+  <!-- ===== PLAYER VIEW ===== -->
+  <div id="playerView" class="player-grid hidden">
+    <!-- Left: hero card -->
+    <div class="panel" id="hero" style="padding:0;">
+      <div id="playerLoading"><span class="spinner"></span></div>
+      <div id="vizContainer"></div>
+      <div id="heroMeta">
+        <div class="badge" id="playerStatus">IDLE</div>
+        <h2 id="heroTitle">Nothing playing</h2>
+        <p id="heroUploader"></p>
+
+        <div class="progress-row">
+          <span class="time" id="curTime">0:00</span>
+          <input type="range" id="progress" min="0" max="0" value="0" step="1" />
+          <span class="time right" id="totalTime">0:00</span>
+        </div>
+
+        <div class="controls-row">
+          <button id="pauseBtn" class="icon" title="Pause">⏸</button>
+          <button id="resumeBtn" class="icon" title="Resume">▶</button>
+          <button id="stopBtn" class="icon" title="Stop">⏹</button>
+          <button class="secondary" id="backBtn">← Back</button>
+          <div class="vol-label">🔊 <input type="range" id="volume" min="0" max="100" value="50" /></div>
+        </div>
+        <div id="controlError" class="error" style="margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- Right: recommendations -->
+    <div class="panel" style="max-height: 400px; overflow-y: auto;">
+      <div class="flex" style="justify-content: space-between; margin-bottom: 6px;">
+        <h3 style="margin:0;font-size:12px;font-weight:600;">Related</h3>
+        <span class="muted" style="font-size:10px;" id="recsLabel">Similar music</span>
+      </div>
+      <div id="recs"><div class="muted" style="font-size:11px;">Play a song to see recommendations.</div></div>
+    </div>
+  </div>
+
+  <script>
+    /* ---- DOM refs ---- */
+    const resultsEl     = document.getElementById("results");
+    const recsEl        = document.getElementById("recs");
+    const pagerEl       = document.getElementById("pager");
+    const resultsCountEl= document.getElementById("resultsCount");
+    const searchErrorEl = document.getElementById("searchError");
+    const controlErrorEl= document.getElementById("controlError");
+    const searchingOvl  = document.getElementById("searchingOverlay");
+    const playerView    = document.getElementById("playerView");
+    const searchView    = document.getElementById("searchView");
+    const heroTitle     = document.getElementById("heroTitle");
+    const heroUploader  = document.getElementById("heroUploader");
+    const playerStatus  = document.getElementById("playerStatus");
+    const playerLoading = document.getElementById("playerLoading");
+    const vizContainer  = document.getElementById("vizContainer");
+    const progressEl    = document.getElementById("progress");
+    const curTimeEl     = document.getElementById("curTime");
+    const totalTimeEl   = document.getElementById("totalTime");
+    const recsLabel     = document.getElementById("recsLabel");
+
+    /* ---- state ---- */
+    let results       = [];
+    let playingId     = null;
+    let playPendingId = null;
+    let page          = 0;
+    const PAGE_SIZE   = 10;
+    let lastPosition  = 0;
+    let lastDuration  = 0;
+    let lastUpdateTs  = Date.now();
+    let lastStatus    = "idle";
+    let isSeeking     = false;
+    let currentTitle  = "";
+    let currentUploader = "";
+
+    /* ---- helpers ---- */
+    async function api(path, opts = {}) {
+      const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Request failed");
+      return d;
+    }
+    function fmt(sec) {
+      const s = Math.max(0, Math.floor(sec || 0));
+      return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
+    }
+
+    /* ---- build visualizer bars ---- */
+    const BAR_COUNT = 50;
+    let vizHeight = 0;
+    const barTargets = new Array(BAR_COUNT).fill(6);
+    let lastTargetTs = 0;
+    function measureViz() { vizHeight = vizContainer.clientHeight || 200; }
+    window.addEventListener("resize", measureViz);
+    (function buildViz() {
+      vizContainer.innerHTML = "";
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const b = document.createElement("div");
+        b.className = "viz-bar";
+        vizContainer.appendChild(b);
+      }
+    })();
+
+    function animateViz(playing) {
+      if (!vizHeight) measureViz();
+      vizContainer.classList.toggle("playing", playing);
+      const bars = vizContainer.children;
+      const now = Date.now();
+      if (playing && now - lastTargetTs > 220) {
+        const phase = now / 800;
+        for (let i = 0; i < BAR_COUNT; i++) {
+          const wave = Math.sin(phase + i * 0.35) * 0.3 + 0.5;
+          const jitter = 0.85 + Math.random() * 0.3;
+          barTargets[i] = Math.max(8, Math.floor(vizHeight * wave * jitter));
+        }
+        lastTargetTs = now;
+      }
+      for (let i = 0; i < bars.length; i++) {
+        bars[i].style.height = playing ? `${barTargets[i]}px` : "6px";
+      }
+    }
+
+    /* ---- search results ---- */
+    function renderResults(items) {
+      const start = page * PAGE_SIZE;
+      const slice = items.slice(start, start + PAGE_SIZE);
+      const total = items.length;
+      const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      resultsCountEl.textContent = total ? `${total} results` : "";
+      resultsEl.innerHTML = "";
+      if (!total) { resultsEl.innerHTML = '<div class="muted">No results.</div>'; renderPager(0); return; }
+      slice.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "result";
+        row.innerHTML = `
+          <img src="${item.thumbnail || ""}" alt="">
+          <div class="result-info">
+            <div class="result-title">${item.title || "Untitled"}</div>
+            <div class="tag">${item.uploader || ""}${item.duration ? " • " + item.duration : ""}</div>
+          </div>`;
+        const btn = document.createElement("button");
+        const isCur = playingId === item.id;
+        btn.textContent = isCur ? "Playing" : "▶ Play";
+        btn.disabled = !!playPendingId || isCur;
+        btn.onclick = () => handlePlay(item.id || item.webpageUrl || item.title, item.id);
+        row.appendChild(btn);
+        resultsEl.appendChild(row);
+      });
+      renderPager(total);
+    }
+    function renderPager(total) {
+      pagerEl.innerHTML = "";
+      const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      if (pages <= 1) return;
+      const prev = document.createElement("button"); prev.className = "secondary";
+      prev.textContent = "← Prev"; prev.disabled = page === 0;
+      prev.onclick = () => { page--; renderResults(results); };
+      const next = document.createElement("button"); next.className = "secondary";
+      next.textContent = "Next →"; next.disabled = page >= pages - 1;
+      next.onclick = () => { page++; renderResults(results); };
+      const lbl = document.createElement("span"); lbl.className = "muted";
+      lbl.textContent = `Page ${page + 1} / ${pages}`;
+      pagerEl.append(prev, next, lbl);
+    }
+
+    /* ---- recommendations ---- */
+    let recsCache = {};
+    async function loadRecs(title, uploader) {
+      const key = `${title}|${uploader}`;
+      if (recsCache[key]) { renderRecs(recsCache[key]); return; }
+      recsLabel.textContent = "Loading…";
+      try {
+        const d = await api(`/api/related?title=${encodeURIComponent(title)}&uploader=${encodeURIComponent(uploader || "")}`);
+        const items = d.results || [];
+        recsCache[key] = items;
+        renderRecs(items);
+        recsLabel.textContent = "Similar music";
+      } catch {
+        recsLabel.textContent = "Could not load";
+      }
+    }
+    function renderRecs(items) {
+      recsEl.innerHTML = "";
+      if (!items.length) { recsEl.innerHTML = '<div class="muted" style="font-size:11px;">No recommendations.</div>'; return; }
+      items.slice(0, 8).forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "rec-item";
+        row.innerHTML = `
+          <img src="${item.thumbnail || ""}" alt="">
+          <div style="flex:1; min-width:0;">
+            <div class="rec-title">${item.title || "Untitled"}</div>
+            <div class="rec-tag">${item.uploader || ""}</div>
+          </div>`;
+        const btn = document.createElement("button");
+        btn.className = "icon";
+        btn.style.padding = "4px 7px"; btn.style.fontSize = "10px";
+        const isCur = playingId === item.id;
+        btn.textContent = isCur ? "▶" : "▶";
+        btn.disabled = !!playPendingId || isCur;
+        if (isCur) btn.style.opacity = "0.4";
+        btn.onclick = () => handlePlay(item.id || item.webpageUrl || item.title, item.id);
+        row.appendChild(btn);
+        recsEl.appendChild(row);
+      });
+    }
+
+    /* ---- search ---- */
+    async function doSearch() {
+      searchErrorEl.textContent = "";
+      const q = document.getElementById("searchInput").value.trim();
+      if (!q) return;
+      searchingOvl.style.display = "flex";
+      try {
+        const d = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30`);
+        results = d.results || [];
+        page = 0;
+        renderResults(results);
+      } catch (err) { searchErrorEl.textContent = err.message; }
+      finally { searchingOvl.style.display = "none"; }
+    }
+
+    /* ---- play ---- */
+    async function handlePlay(target, id) {
+      if (playPendingId) return;
+      controlErrorEl.textContent = "";
+      playPendingId = id || target;
+      playerLoading.style.display = "flex";
+      renderResults(results);
+      showPlayer();
+      heroTitle.textContent = "Loading…";
+      heroUploader.textContent = "";
+      playerStatus.textContent = "LOADING";
+      try {
+        await api("/api/play", { method: "POST", body: JSON.stringify({ id: target }) });
+        playingId = id || target;
+        await refreshStatus();
+        if (currentTitle) loadRecs(currentTitle, currentUploader);
+      } catch (err) { controlErrorEl.textContent = err.message; }
+      finally {
+        playPendingId = null;
+        playerLoading.style.display = "none";
+        renderResults(results);
+      }
+    }
+
+    /* ---- controls ---- */
+    async function postCtrl(path, body) {
+      controlErrorEl.textContent = "";
+      try {
+        await api(path, { method: "POST", body: body ? JSON.stringify(body) : undefined });
+        await refreshStatus();
+      } catch (err) { controlErrorEl.textContent = err.message; }
+    }
+
+    /* ---- status polling ---- */
+    async function refreshStatus() {
+      try {
+        const d = await api("/api/status");
+        const s = d.result || {};
+        const st = s.status || "idle";
+        lastStatus = st;
+        playerStatus.textContent = st.toUpperCase();
+        heroTitle.textContent = s.meta?.title || "Nothing playing";
+        heroUploader.textContent = s.meta?.uploader || "";
+        currentTitle = s.meta?.title || "";
+        currentUploader = s.meta?.uploader || "";
+        lastDuration = s.durationSeconds || s.meta?.durationSeconds || 0;
+        lastPosition = s.position ?? 0;
+        lastUpdateTs = Date.now();
+        updateProgress(lastPosition, lastDuration);
+        if (s.meta?.id) playingId = s.meta.id;
+      } catch { playerStatus.textContent = "ERROR"; }
+    }
+
+    function updateProgress(pos, dur) {
+      if (!dur) {
+        progressEl.max = 0; progressEl.value = 0; progressEl.disabled = true;
+        curTimeEl.textContent = fmt(pos); totalTimeEl.textContent = "—";
+        return;
+      }
+      progressEl.disabled = false;
+      progressEl.max = Math.floor(dur);
+      if (!isSeeking) progressEl.value = Math.floor(Math.min(pos, dur));
+      curTimeEl.textContent = fmt(pos);
+      totalTimeEl.textContent = fmt(dur);
+    }
+
+    /* ---- animation tick (60fps progress, 10fps viz) ---- */
+    let lastVizTs = 0;
+    function tick() {
+      const now = Date.now();
+      const elapsed = (now - lastUpdateTs) / 1000;
+      let proj = lastPosition;
+      if (lastStatus === "playing" && !isSeeking) proj = lastPosition + elapsed;
+      updateProgress(proj, lastDuration);
+      if (now - lastVizTs > 100) { animateViz(lastStatus === "playing"); lastVizTs = now; }
+      requestAnimationFrame(tick);
+    }
+
+    /* ---- view toggling ---- */
+    function showPlayer() { searchView.classList.add("hidden"); playerView.classList.remove("hidden"); }
+    function showSearch() { playerView.classList.add("hidden"); searchView.classList.remove("hidden"); }
+
+    /* ---- event bindings ---- */
+    document.getElementById("searchBtn").onclick = doSearch;
+    document.getElementById("searchInput").addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+    document.getElementById("pauseBtn").onclick  = () => { lastStatus = "paused"; playerStatus.textContent = "PAUSED"; postCtrl("/api/pause"); };
+    document.getElementById("resumeBtn").onclick = () => { lastStatus = "playing"; lastUpdateTs = Date.now(); playerStatus.textContent = "PLAYING"; postCtrl("/api/resume"); };
+    document.getElementById("stopBtn").onclick   = () => { lastStatus = "idle"; playerStatus.textContent = "IDLE"; postCtrl("/api/stop"); };
+    document.getElementById("volume").oninput    = (e) => { api("/api/volume", { method: "POST", body: JSON.stringify({ level: e.target.value }) }).catch(() => {}); };
+    document.getElementById("backBtn").onclick   = showSearch;
+    progressEl.addEventListener("input", () => { isSeeking = true; curTimeEl.textContent = fmt(Number(progressEl.value)); });
+    progressEl.addEventListener("change", async () => {
+      isSeeking = false;
+      try { await api("/api/seek", { method: "POST", body: JSON.stringify({ position: Number(progressEl.value) }) }); }
+      catch (err) { controlErrorEl.textContent = err.message; }
+    });
+
+    /* ---- boot ---- */
+    refreshStatus();
+    setInterval(refreshStatus, 1000);
+    requestAnimationFrame(tick);
+  </script>
+  <!-- ===== AI CHAT PANEL ===== -->
+  <button id="chatToggle" title="Ask Copilot for music">🤖</button>
+  <div id="chatPanel">
+    <div id="chatHeader">
+      <span style="font-size:14px;">✨</span>
+      <h3>Music AI</h3>
+      <span class="tag">Gemini</span>
+    </div>
+    <div id="chatMessages">
+      <div class="chat-msg ai">Hi! Tell me what mood you're in and I'll find the perfect music for you. 🎶</div>
+    </div>
+    <div id="chatInputRow">
+      <input id="chatInput" type="text" placeholder="e.g. chill lo-fi for studying" />
+      <button id="chatSend">Send</button>
+    </div>
+  </div>
+
+  <script>
+    /* ---- Chat panel logic ---- */
+    const chatPanel    = document.getElementById("chatPanel");
+    const chatMessages = document.getElementById("chatMessages");
+    const chatInput    = document.getElementById("chatInput");
+    const chatSend     = document.getElementById("chatSend");
+
+    document.getElementById("chatToggle").onclick = () => chatPanel.classList.toggle("open");
+
+    async function sendChat() {
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+      chatInput.value = "";
+      chatSend.disabled = true;
+
+      // User bubble
+      const userBubble = document.createElement("div");
+      userBubble.className = "chat-msg user";
+      userBubble.textContent = msg;
+      chatMessages.appendChild(userBubble);
+
+      // Typing indicator
+      const typing = document.createElement("div");
+      typing.className = "chat-typing";
+      typing.textContent = "Copilot is thinking…";
+      chatMessages.appendChild(typing);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        const r = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg })
+        });
+        const d = await r.json();
+        typing.remove();
+        if (!d.ok) throw new Error(d.error);
+
+        const aiBubble = document.createElement("div");
+        aiBubble.className = "chat-msg ai";
+        let html = `<div style="margin-bottom:8px;">${d.message}</div>`;
+        if (d.suggestions?.length) {
+          html += '<div>';
+          d.suggestions.forEach((s) => {
+            const q = (s.query || "").replace(/"/g, '&quot;');
+            html += `<button class="suggestion-btn" data-query="${q}" title="${s.reason || ""}">${s.query}</button>`;
+          });
+          html += '</div>';
+        }
+        aiBubble.innerHTML = html;
+
+        // Click a suggestion to directly play it
+        aiBubble.querySelectorAll(".suggestion-btn").forEach((btn) => {
+          btn.onclick = async () => {
+            const query = btn.dataset.query;
+            btn.disabled = true;
+            btn.textContent = "⏳ Playing…";
+            chatPanel.classList.remove("open");
+            showPlayer();
+            playerLoading.style.display = "flex";
+            controlErrorEl.textContent = "";
+            try {
+              await api("/api/play", { method: "POST", body: JSON.stringify({ query }) });
+              playerLoading.style.display = "none";
+              await refreshStatus();
+              if (currentTitle) loadRecs(currentTitle, currentUploader);
+              btn.textContent = "✓ Playing";
+            } catch (err) {
+              playerLoading.style.display = "none";
+              controlErrorEl.textContent = err.message;
+              btn.textContent = query;
+              btn.disabled = false;
+            }
+          };
+        });
+
+        chatMessages.appendChild(aiBubble);
+      } catch (err) {
+        typing.remove();
+        const errBubble = document.createElement("div");
+        errBubble.className = "chat-msg ai";
+        errBubble.innerHTML = `<span class="error">⚠ ${err.message}</span>`;
+        chatMessages.appendChild(errBubble);
+      }
+      chatSend.disabled = false;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    chatSend.onclick = sendChat;
+    chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+  </script>
+</body>
+</html>

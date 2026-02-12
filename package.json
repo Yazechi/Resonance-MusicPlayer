@@ -1,0 +1,20 @@
+{
+  "name": "copilot-youtube-music-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/server.js",
+  "description": "Copilot-accessible CLI that plays YouTube audio via mpv/yt-dlp",
+  "scripts": {
+    "start": "node src/server.js",
+    "cli": "node src/index.js",
+    "lint": "node --check src/index.js src/player.js src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "dotenv": "^17.2.4",
+    "express": "^4.22.1"
+  }
+}
