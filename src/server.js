@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import "dotenv/config";
 import { play, pause, resume, stop, setVolume, getStatus, search, seek, related } from "./player.js";
 import { recordPlay, getHistory, chat } from "./ai.js";
+import { listPlaylists, getPlaylist, createPlaylist, updatePlaylist, deletePlaylist, addTrack, removeTrack, reorderTrack } from "./playlist.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ app.get("/api/search", async (req, res) => {
   try {
     const query = req.query.q;
     if (!query) return sendError(res, new Error("Query parameter q is required"), 400);
-    const limit = Math.max(10, Math.min(50, Number(req.query.limit) || 30));
+    const limit = Math.max(5, Math.min(50, Number(req.query.limit) || 15));
     const results = await search(query, limit);
     res.json({ ok: true, results });
   } catch (err) {
@@ -119,6 +120,73 @@ app.post("/api/chat", async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (err) {
     sendError(res, err);
+  }
+});
+
+/* ---- Playlist routes ---- */
+
+app.get("/api/playlists", (_req, res) => {
+  res.json({ ok: true, playlists: listPlaylists() });
+});
+
+app.post("/api/playlists", (req, res) => {
+  try {
+    const { name, description } = req.body || {};
+    res.json({ ok: true, playlist: createPlaylist(name, description) });
+  } catch (err) {
+    sendError(res, err, 400);
+  }
+});
+
+app.get("/api/playlists/:id", (req, res) => {
+  try {
+    res.json({ ok: true, playlist: getPlaylist(req.params.id) });
+  } catch (err) {
+    sendError(res, err, 404);
+  }
+});
+
+app.patch("/api/playlists/:id", (req, res) => {
+  try {
+    const { name, description } = req.body || {};
+    res.json({ ok: true, playlist: updatePlaylist(req.params.id, { name, description }) });
+  } catch (err) {
+    sendError(res, err, 404);
+  }
+});
+
+app.delete("/api/playlists/:id", (req, res) => {
+  try {
+    res.json({ ok: true, playlist: deletePlaylist(req.params.id) });
+  } catch (err) {
+    sendError(res, err, 404);
+  }
+});
+
+app.post("/api/playlists/:id/tracks", (req, res) => {
+  try {
+    const track = req.body || {};
+    res.json({ ok: true, playlist: addTrack(req.params.id, track) });
+  } catch (err) {
+    sendError(res, err, 400);
+  }
+});
+
+app.delete("/api/playlists/:id/tracks/:trackId", (req, res) => {
+  try {
+    res.json({ ok: true, playlist: removeTrack(req.params.id, req.params.trackId) });
+  } catch (err) {
+    sendError(res, err, 404);
+  }
+});
+
+app.patch("/api/playlists/:id/tracks/:trackId/reorder", (req, res) => {
+  try {
+    const { position } = req.body || {};
+    if (position === undefined) return sendError(res, new Error("position is required"), 400);
+    res.json({ ok: true, playlist: reorderTrack(req.params.id, req.params.trackId, position) });
+  } catch (err) {
+    sendError(res, err, 404);
   }
 });
 

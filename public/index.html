@@ -106,10 +106,34 @@
     .player-grid {
       display: grid;
       grid-template-columns: 1fr 280px;
+      grid-template-rows: auto 1fr;
       gap: 10px;
       align-items: start;
+      min-height: calc(100vh - 60px);
     }
     @media (max-width: 800px) { .player-grid { grid-template-columns: 1fr; } }
+    .bottom-panels {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 800px) { .bottom-panels { grid-template-columns: 1fr; } }
+    .bottom-panel-card {
+      max-height: 340px;
+      overflow-y: auto;
+    }
+    .bottom-panel-card h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+    .history-item {
+      display: flex; gap: 8px; align-items: center; padding: 6px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      background: rgba(0,0,0,0.2); margin-bottom: 4px;
+      transition: all 150ms ease; cursor: pointer;
+    }
+    .history-item:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+    .history-item .hi-title { flex: 1; font-size: 12px; font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item .hi-sub { color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .history-item button { padding: 3px 7px; font-size: 10px; }
 
     #hero {
       position: relative;
@@ -198,6 +222,61 @@
 
     .pager { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 8px; }
 
+    /* --- Playlist section --- */
+    .playlist-section { margin-bottom: 10px; }
+    .playlist-header { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+    .playlist-header h3 { margin: 0; font-size: 13px; font-weight: 600; }
+    .playlist-card {
+      background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 10px; margin-bottom: 6px; transition: all 150ms ease;
+    }
+    .playlist-card:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+    .playlist-card-header { display: flex; gap: 8px; align-items: center; }
+    .playlist-card-header .pl-name {
+      flex: 1; font-weight: 600; font-size: 13px; cursor: pointer;
+      background: none; border: none; color: var(--text); padding: 0;
+      min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .playlist-card-header .pl-name:hover { text-decoration: underline; }
+    .playlist-card-header .pl-count { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .playlist-card-header button { padding: 4px 8px; font-size: 11px; }
+    .playlist-tracks { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
+    .playlist-track {
+      display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 12px;
+    }
+    .playlist-track .pt-num { color: var(--muted); font-size: 11px; min-width: 20px; }
+    .playlist-track .pt-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .playlist-track .pt-uploader { color: var(--muted); font-size: 11px; }
+    .playlist-track button { padding: 2px 6px; font-size: 10px; }
+    .pl-playback-bar {
+      display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap;
+    }
+    .pl-playback-bar .badge { font-size: 9px; }
+    .pl-mode-btn { padding: 4px 8px; font-size: 11px; }
+    .pl-mode-btn.active { background: var(--accent-2); box-shadow: 0 0 8px var(--accent-glow); }
+    .pl-create-row { display: flex; gap: 6px; align-items: center; }
+    .pl-create-row input { width: min(200px, 100%); padding: 6px 10px; font-size: 12px; }
+    .pl-rename-input {
+      background: rgba(0,0,0,0.3); border: 1px solid var(--accent); color: var(--text);
+      padding: 2px 6px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
+      outline: none; width: 150px;
+    }
+    .add-to-pl-wrap { position: relative; display: inline-block; }
+    .add-to-pl-menu {
+      position: absolute; top: 100%; right: 0; z-index: 50;
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      min-width: 160px; max-height: 200px; overflow-y: auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4); padding: 4px 0;
+    }
+    .add-to-pl-menu .pl-menu-item {
+      display: block; width: 100%; text-align: left; padding: 6px 10px; font-size: 12px;
+      background: none; border: none; color: var(--text); cursor: pointer; border-radius: 0;
+    }
+    .add-to-pl-menu .pl-menu-item:hover { background: rgba(99,102,241,0.15); }
+    .nq-item { font-size: 12px; padding: 4px 6px; color: var(--muted); border-radius: var(--radius-sm); }
+    .nq-item:hover { background: rgba(255,255,255,0.04); }
+    .nq-item.active { color: var(--text); font-weight: 600; background: rgba(99,102,241,0.1); }
+
     /* --- AI Chat Panel --- */
     #chatToggle {
       position: fixed; bottom: 16px; right: 16px; z-index: 100;
@@ -277,6 +356,18 @@
 
   <!-- ===== SEARCH VIEW ===== -->
   <div id="searchView">
+    <!-- Playlist Section -->
+    <div class="panel playlist-section" id="playlistSection">
+      <div class="playlist-header">
+        <h3>🎧 Playlists</h3>
+        <div class="pl-create-row">
+          <input id="newPlName" type="text" placeholder="New playlist name…" />
+          <button id="createPlBtn">+ Create</button>
+        </div>
+      </div>
+      <div id="playlistList"></div>
+    </div>
+
     <div class="panel flex">
       <input id="searchInput" type="text" placeholder="Search for music..." />
       <button id="searchBtn">Search</button>
@@ -329,6 +420,22 @@
       </div>
       <div id="recs"><div class="muted" style="font-size:11px;">Play a song to see recommendations.</div></div>
     </div>
+
+    <!-- Bottom row: Queue + History -->
+    <div class="bottom-panels">
+      <div class="panel bottom-panel-card" id="queuePanelCard">
+        <h3>📋 Queue</h3>
+        <div id="queuePanel" class="hidden">
+          <div style="margin-bottom:6px;"><span class="badge" id="queueMode">Sequential</span></div>
+          <div id="queueList"></div>
+        </div>
+        <div id="queueEmpty" class="muted" style="font-size:12px;">Play a playlist to see the queue here.</div>
+      </div>
+      <div class="panel bottom-panel-card">
+        <h3>🕐 Recently Played</h3>
+        <div id="historyList"><div class="muted" style="font-size:12px;">No history yet.</div></div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -351,6 +458,12 @@
     const curTimeEl     = document.getElementById("curTime");
     const totalTimeEl   = document.getElementById("totalTime");
     const recsLabel     = document.getElementById("recsLabel");
+    const playlistListEl= document.getElementById("playlistList");
+    const queuePanel    = document.getElementById("queuePanel");
+    const queueList     = document.getElementById("queueList");
+    const queueModeEl   = document.getElementById("queueMode");
+    const queueEmpty    = document.getElementById("queueEmpty");
+    const historyListEl = document.getElementById("historyList");
 
     /* ---- state ---- */
     let results       = [];
@@ -365,6 +478,15 @@
     let isSeeking     = false;
     let currentTitle  = "";
     let currentUploader = "";
+    let playlists     = [];
+    let expandedPl    = null;
+    let searchDebounce = null;
+
+    /* ---- playlist queue state ---- */
+    let plQueue       = [];
+    let plQueueIndex  = -1;
+    let plQueueMode   = "sequential"; // sequential | shuffle | loop
+    let plQueueActive = false;
 
     /* ---- helpers ---- */
     async function api(path, opts = {}) {
@@ -418,7 +540,6 @@
       const start = page * PAGE_SIZE;
       const slice = items.slice(start, start + PAGE_SIZE);
       const total = items.length;
-      const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
       resultsCountEl.textContent = total ? `${total} results` : "";
       resultsEl.innerHTML = "";
       if (!total) { resultsEl.innerHTML = '<div class="muted">No results.</div>'; renderPager(0); return; }
@@ -428,15 +549,54 @@
         row.innerHTML = `
           <img src="${item.thumbnail || ""}" alt="">
           <div class="result-info">
-            <div class="result-title">${item.title || "Untitled"}</div>
-            <div class="tag">${item.uploader || ""}${item.duration ? " • " + item.duration : ""}</div>
+            <div class="result-title">${esc(item.title || "Untitled")}</div>
+            <div class="tag">${esc(item.uploader || "")}${item.duration ? " • " + item.duration : ""}</div>
           </div>`;
         const btn = document.createElement("button");
         const isCur = playingId === item.id;
         btn.textContent = isCur ? "Playing" : "▶ Play";
         btn.disabled = !!playPendingId || isCur;
-        btn.onclick = () => handlePlay(item.id || item.webpageUrl || item.title, item.id);
+        btn.onclick = () => { plQueueActive = false; handlePlay(item.id || item.webpageUrl || item.title, item.id); };
         row.appendChild(btn);
+
+        // Add-to-playlist button
+        if (playlists.length > 0) {
+          const wrap = document.createElement("div");
+          wrap.className = "add-to-pl-wrap";
+          const addBtn = document.createElement("button");
+          addBtn.className = "secondary";
+          addBtn.textContent = "+";
+          addBtn.title = "Add to playlist";
+          addBtn.onclick = (e) => {
+            e.stopPropagation();
+            const existing = wrap.querySelector(".add-to-pl-menu");
+            if (existing) { existing.remove(); return; }
+            document.querySelectorAll(".add-to-pl-menu").forEach(m => m.remove());
+            const menu = document.createElement("div");
+            menu.className = "add-to-pl-menu";
+            playlists.forEach((pl) => {
+              const mi = document.createElement("button");
+              mi.className = "pl-menu-item";
+              mi.textContent = pl.name;
+              mi.onclick = async (ev) => {
+                ev.stopPropagation();
+                try {
+                  await api(`/api/playlists/${pl.id}/tracks`, {
+                    method: "POST",
+                    body: JSON.stringify({ id: item.id, title: item.title, uploader: item.uploader, duration: item.duration, thumbnail: item.thumbnail })
+                  });
+                  mi.textContent = "✓ Added";
+                  mi.disabled = true;
+                  await loadPlaylists();
+                } catch (err) { mi.textContent = err.message; }
+              };
+              menu.appendChild(mi);
+            });
+            wrap.appendChild(menu);
+          };
+          wrap.appendChild(addBtn);
+          row.appendChild(wrap);
+        }
         resultsEl.appendChild(row);
       });
       renderPager(total);
@@ -455,6 +615,11 @@
       lbl.textContent = `Page ${page + 1} / ${pages}`;
       pagerEl.append(prev, next, lbl);
     }
+
+    function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+    /* Close add-to-playlist menus on outside click */
+    document.addEventListener("click", () => document.querySelectorAll(".add-to-pl-menu").forEach(m => m.remove()));
 
     /* ---- recommendations ---- */
     let recsCache = {};
@@ -481,17 +646,17 @@
         row.innerHTML = `
           <img src="${item.thumbnail || ""}" alt="">
           <div style="flex:1; min-width:0;">
-            <div class="rec-title">${item.title || "Untitled"}</div>
-            <div class="rec-tag">${item.uploader || ""}</div>
+            <div class="rec-title">${esc(item.title || "Untitled")}</div>
+            <div class="rec-tag">${esc(item.uploader || "")}</div>
           </div>`;
         const btn = document.createElement("button");
         btn.className = "icon";
         btn.style.padding = "4px 7px"; btn.style.fontSize = "10px";
         const isCur = playingId === item.id;
-        btn.textContent = isCur ? "▶" : "▶";
+        btn.textContent = "▶";
         btn.disabled = !!playPendingId || isCur;
         if (isCur) btn.style.opacity = "0.4";
-        btn.onclick = () => handlePlay(item.id || item.webpageUrl || item.title, item.id);
+        btn.onclick = () => { plQueueActive = false; handlePlay(item.id || item.webpageUrl || item.title, item.id); };
         row.appendChild(btn);
         recsEl.appendChild(row);
       });
@@ -504,7 +669,7 @@
       if (!q) return;
       searchingOvl.style.display = "flex";
       try {
-        const d = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30`);
+        const d = await api(`/api/search?q=${encodeURIComponent(q)}&limit=15`);
         results = d.results || [];
         page = 0;
         renderResults(results);
@@ -533,6 +698,8 @@
         playPendingId = null;
         playerLoading.style.display = "none";
         renderResults(results);
+        renderQueuePanel();
+        loadHistory();
       }
     }
 
@@ -551,6 +718,7 @@
         const d = await api("/api/status");
         const s = d.result || {};
         const st = s.status || "idle";
+        const prevStatus = lastStatus;
         lastStatus = st;
         playerStatus.textContent = st.toUpperCase();
         heroTitle.textContent = s.meta?.title || "Nothing playing";
@@ -562,6 +730,11 @@
         lastUpdateTs = Date.now();
         updateProgress(lastPosition, lastDuration);
         if (s.meta?.id) playingId = s.meta.id;
+
+        // Auto-advance playlist queue when song ends
+        if (plQueueActive && prevStatus === "playing" && st === "idle" && !playPendingId) {
+          advanceQueue();
+        }
       } catch { playerStatus.textContent = "ERROR"; }
     }
 
@@ -594,12 +767,261 @@
     function showPlayer() { searchView.classList.add("hidden"); playerView.classList.remove("hidden"); }
     function showSearch() { playerView.classList.add("hidden"); searchView.classList.remove("hidden"); }
 
+    /* ==== PLAYLIST MANAGEMENT ==== */
+    async function loadPlaylists() {
+      try {
+        const d = await api("/api/playlists");
+        playlists = d.playlists || [];
+        renderPlaylists();
+      } catch { /* ignore */ }
+    }
+
+    function renderPlaylists() {
+      playlistListEl.innerHTML = "";
+      if (!playlists.length) {
+        playlistListEl.innerHTML = '<div class="muted" style="font-size:12px;">No playlists yet. Create one above!</div>';
+        return;
+      }
+      playlists.forEach((pl) => {
+        const card = document.createElement("div");
+        card.className = "playlist-card";
+        card.dataset.id = pl.id;
+
+        const header = document.createElement("div");
+        header.className = "playlist-card-header";
+
+        const nameBtn = document.createElement("button");
+        nameBtn.className = "pl-name";
+        nameBtn.textContent = pl.name;
+        nameBtn.title = "Click to expand, double-click to rename";
+        nameBtn.onclick = () => togglePlaylistExpand(pl.id);
+        nameBtn.ondblclick = () => startRenamePl(pl.id, nameBtn);
+
+        const count = document.createElement("span");
+        count.className = "pl-count";
+        count.textContent = `${pl.trackCount} track${pl.trackCount !== 1 ? "s" : ""}`;
+
+        const playBtn = document.createElement("button");
+        playBtn.textContent = "▶ Play";
+        playBtn.title = "Play all (sequential)";
+        playBtn.onclick = (e) => { e.stopPropagation(); startPlaylistQueue(pl.id, "sequential"); };
+
+        const shuffleBtn = document.createElement("button");
+        shuffleBtn.className = "secondary";
+        shuffleBtn.textContent = "🔀";
+        shuffleBtn.title = "Shuffle play";
+        shuffleBtn.onclick = (e) => { e.stopPropagation(); startPlaylistQueue(pl.id, "shuffle"); };
+
+        const loopBtn = document.createElement("button");
+        loopBtn.className = "secondary";
+        loopBtn.textContent = "🔁";
+        loopBtn.title = "Loop play";
+        loopBtn.onclick = (e) => { e.stopPropagation(); startPlaylistQueue(pl.id, "loop"); };
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "secondary";
+        delBtn.textContent = "✕";
+        delBtn.title = "Delete playlist";
+        delBtn.onclick = async (e) => {
+          e.stopPropagation();
+          if (!confirm(`Delete "${pl.name}"?`)) return;
+          try { await api(`/api/playlists/${pl.id}`, { method: "DELETE" }); await loadPlaylists(); }
+          catch (err) { alert(err.message); }
+        };
+
+        header.append(nameBtn, count, playBtn, shuffleBtn, loopBtn, delBtn);
+        card.appendChild(header);
+
+        // Expanded track list
+        if (expandedPl === pl.id) {
+          const tracksDiv = document.createElement("div");
+          tracksDiv.className = "playlist-tracks";
+          tracksDiv.innerHTML = '<div class="muted" style="font-size:11px;">Loading tracks…</div>';
+          card.appendChild(tracksDiv);
+          loadPlaylistTracks(pl.id, tracksDiv);
+        }
+        playlistListEl.appendChild(card);
+      });
+    }
+
+    function togglePlaylistExpand(id) {
+      expandedPl = expandedPl === id ? null : id;
+      renderPlaylists();
+    }
+
+    async function loadPlaylistTracks(id, container) {
+      try {
+        const d = await api(`/api/playlists/${id}`);
+        const tracks = d.playlist?.tracks || [];
+        container.innerHTML = "";
+        if (!tracks.length) {
+          container.innerHTML = '<div class="muted" style="font-size:11px;">No tracks. Search and add songs!</div>';
+          return;
+        }
+        tracks.forEach((t, i) => {
+          const row = document.createElement("div");
+          row.className = "playlist-track";
+          row.innerHTML = `
+            <span class="pt-num">${i + 1}</span>
+            <span class="pt-title" title="${esc(t.title)}">${esc(t.title)}</span>
+            <span class="pt-uploader">${esc(t.uploader || "")}</span>`;
+          const playBtn = document.createElement("button");
+          playBtn.textContent = "▶";
+          playBtn.onclick = () => { plQueueActive = false; handlePlay(t.id, t.id); };
+          const rmBtn = document.createElement("button");
+          rmBtn.className = "secondary";
+          rmBtn.textContent = "✕";
+          rmBtn.onclick = async () => {
+            try { await api(`/api/playlists/${id}/tracks/${t.id}`, { method: "DELETE" }); await loadPlaylists(); }
+            catch (err) { alert(err.message); }
+          };
+          row.append(playBtn, rmBtn);
+          container.appendChild(row);
+        });
+      } catch (err) {
+        container.innerHTML = `<div class="error">${err.message}</div>`;
+      }
+    }
+
+    function startRenamePl(id, btnEl) {
+      const current = btnEl.textContent;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "pl-rename-input";
+      input.value = current;
+      btnEl.replaceWith(input);
+      input.focus();
+      input.select();
+      const finish = async () => {
+        const newName = input.value.trim();
+        if (newName && newName !== current) {
+          try { await api(`/api/playlists/${id}`, { method: "PATCH", body: JSON.stringify({ name: newName }) }); }
+          catch { /* ignore */ }
+        }
+        await loadPlaylists();
+      };
+      input.onblur = finish;
+      input.onkeydown = (e) => { if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = current; input.blur(); } };
+    }
+
+    document.getElementById("createPlBtn").onclick = async () => {
+      const nameInput = document.getElementById("newPlName");
+      const name = nameInput.value.trim();
+      if (!name) return;
+      try {
+        await api("/api/playlists", { method: "POST", body: JSON.stringify({ name }) });
+        nameInput.value = "";
+        await loadPlaylists();
+      } catch (err) { alert(err.message); }
+    };
+    document.getElementById("newPlName").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("createPlBtn").click();
+    });
+
+    /* ==== PLAYLIST QUEUE PLAYBACK ==== */
+    async function startPlaylistQueue(plId, mode) {
+      try {
+        const d = await api(`/api/playlists/${plId}`);
+        const tracks = d.playlist?.tracks || [];
+        if (!tracks.length) { alert("Playlist is empty"); return; }
+        plQueue = [...tracks];
+        plQueueMode = mode;
+        if (mode === "shuffle") shuffleArray(plQueue);
+        plQueueIndex = 0;
+        plQueueActive = true;
+        renderQueuePanel();
+        showPlayer();
+        await handlePlay(plQueue[0].id, plQueue[0].id);
+      } catch (err) { alert(err.message); }
+    }
+
+    function advanceQueue() {
+      if (!plQueueActive || !plQueue.length) return;
+      plQueueIndex++;
+      if (plQueueIndex >= plQueue.length) {
+        if (plQueueMode === "loop") {
+          plQueueIndex = 0;
+        } else {
+          plQueueActive = false;
+          renderQueuePanel();
+          return;
+        }
+      }
+      const next = plQueue[plQueueIndex];
+      renderQueuePanel();
+      handlePlay(next.id, next.id);
+    }
+
+    function renderQueuePanel() {
+      if (!plQueueActive || !plQueue.length) {
+        queuePanel.classList.add("hidden");
+        queueEmpty.classList.remove("hidden");
+        return;
+      }
+      queuePanel.classList.remove("hidden");
+      queueEmpty.classList.add("hidden");
+      queueModeEl.textContent = plQueueMode === "shuffle" ? "🔀 Shuffle" : plQueueMode === "loop" ? "🔁 Loop" : "Sequential";
+      queueList.innerHTML = "";
+      plQueue.forEach((track, i) => {
+        const item = document.createElement("div");
+        item.className = "nq-item" + (i === plQueueIndex ? " active" : "");
+        item.textContent = `${i + 1}. ${track.title}`;
+        if (i !== plQueueIndex) {
+          item.style.cursor = "pointer";
+          item.onclick = () => { plQueueIndex = i; renderQueuePanel(); handlePlay(track.id, track.id); };
+        }
+        queueList.appendChild(item);
+      });
+    }
+
+    /* ==== LISTENING HISTORY ==== */
+    async function loadHistory() {
+      try {
+        const d = await api("/api/history");
+        renderHistory(d.history || []);
+      } catch { /* ignore */ }
+    }
+    function renderHistory(items) {
+      historyListEl.innerHTML = "";
+      if (!items.length) {
+        historyListEl.innerHTML = '<div class="muted" style="font-size:12px;">No history yet.</div>';
+        return;
+      }
+      items.forEach((h) => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+        row.innerHTML = `
+          <div style="flex:1;min-width:0;">
+            <div class="hi-title">${esc(h.title)}</div>
+            <div class="hi-sub">${esc(h.uploader || "")}</div>
+          </div>`;
+        const btn = document.createElement("button");
+        btn.textContent = "▶";
+        btn.onclick = (e) => { e.stopPropagation(); plQueueActive = false; handlePlay(h.id, h.id); };
+        row.appendChild(btn);
+        historyListEl.appendChild(row);
+      });
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
     /* ---- event bindings ---- */
     document.getElementById("searchBtn").onclick = doSearch;
-    document.getElementById("searchInput").addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+    document.getElementById("searchInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { clearTimeout(searchDebounce); doSearch(); }
+    });
+    document.getElementById("searchInput").addEventListener("input", () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(doSearch, 400);
+    });
     document.getElementById("pauseBtn").onclick  = () => { lastStatus = "paused"; playerStatus.textContent = "PAUSED"; postCtrl("/api/pause"); };
     document.getElementById("resumeBtn").onclick = () => { lastStatus = "playing"; lastUpdateTs = Date.now(); playerStatus.textContent = "PLAYING"; postCtrl("/api/resume"); };
-    document.getElementById("stopBtn").onclick   = () => { lastStatus = "idle"; playerStatus.textContent = "IDLE"; postCtrl("/api/stop"); };
+    document.getElementById("stopBtn").onclick   = () => { lastStatus = "idle"; playerStatus.textContent = "IDLE"; plQueueActive = false; renderQueuePanel(); postCtrl("/api/stop"); };
     document.getElementById("volume").oninput    = (e) => { api("/api/volume", { method: "POST", body: JSON.stringify({ level: e.target.value }) }).catch(() => {}); };
     document.getElementById("backBtn").onclick   = showSearch;
     progressEl.addEventListener("input", () => { isSeeking = true; curTimeEl.textContent = fmt(Number(progressEl.value)); });
@@ -611,7 +1033,10 @@
 
     /* ---- boot ---- */
     refreshStatus();
+    loadPlaylists();
+    loadHistory();
     setInterval(refreshStatus, 1000);
+    setInterval(loadHistory, 10000);
     requestAnimationFrame(tick);
   </script>
   <!-- ===== AI CHAT PANEL ===== -->

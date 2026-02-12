@@ -53,15 +53,22 @@ function isUrl(text) {
 
 function runJson(args, errorMessage) {
   if (!YT_CMD) throw new Error("yt-dlp not found");
-  const res = spawnSync(YT_CMD, ["--ignore-config", "--no-warnings", ...args], {
-    encoding: "utf8",
-    windowsHide: true,
-    maxBuffer: 15 * 1024 * 1024
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    const errChunks = [];
+    const proc = spawn(YT_CMD, ["--ignore-config", "--no-warnings", ...args], {
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    proc.stdout.on("data", (d) => chunks.push(d));
+    proc.stderr.on("data", (d) => errChunks.push(d));
+    proc.on("error", (err) => reject(err));
+    proc.on("close", (code) => {
+      if (code !== 0) return reject(new Error(Buffer.concat(errChunks).toString() || errorMessage));
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
+      catch (e) { reject(new Error(errorMessage)); }
+    });
   });
-  if (res.status !== 0) {
-    throw new Error(res.stderr || errorMessage);
-  }
-  return JSON.parse(res.stdout);
 }
 
 function pickEntry(data) {
@@ -92,20 +99,28 @@ function normalizeMeta(entry) {
 
 async function resolveUrl(target) {
   if (!YT_CMD) throw new Error("yt-dlp not found");
-  const res = spawnSync(YT_CMD, ["--ignore-config", "--no-warnings", "-f", "bestaudio/best", "--get-url", target], {
-    encoding: "utf8",
-    windowsHide: true
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    const errChunks = [];
+    const proc = spawn(YT_CMD, ["--ignore-config", "--no-warnings", "-f", "bestaudio/best", "--get-url", target], {
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    proc.stdout.on("data", (d) => chunks.push(d));
+    proc.stderr.on("data", (d) => errChunks.push(d));
+    proc.on("error", (err) => reject(err));
+    proc.on("close", (code) => {
+      const out = Buffer.concat(chunks).toString().trim();
+      if (code !== 0 || !out) return reject(new Error(Buffer.concat(errChunks).toString() || "Unable to resolve stream URL via yt-dlp"));
+      resolve(out.split("\n")[0].trim());
+    });
   });
-  if (res.status !== 0 || !res.stdout.trim()) {
-    throw new Error(res.stderr || "Unable to resolve stream URL via yt-dlp");
-  }
-  return res.stdout.trim().split("\n")[0].trim();
 }
 
 async function getMetadata(target) {
   const cached = metaCache.get(target);
   if (cached && Date.now() - cached.t < CACHE_MS) return cached.v;
-  const data = runJson(["-J", target], "Unable to fetch metadata via yt-dlp");
+  const data = await runJson(["-J", target], "Unable to fetch metadata via yt-dlp");
   const entry = pickEntry(data);
   const meta = normalizeMeta(entry);
   if (!meta) throw new Error("No metadata found");
@@ -317,7 +332,7 @@ export async function search(query, limit = 30) {
   const key = `${limit}:${query}`;
   const cached = searchCache.get(key);
   if (cached && Date.now() - cached.t < CACHE_MS) return cached.v;
-  const data = runJson(["-J", "--skip-download", "--flat-playlist", `ytsearch${limit}:${query}`], "Unable to search via yt-dlp");
+  const data = await runJson(["-J", "--skip-download", "--flat-playlist", `ytsearch${limit}:${query}`], "Unable to search via yt-dlp");
   const entries = Array.isArray(data.entries) ? data.entries : [];
   const results = entries
     .filter(Boolean)
