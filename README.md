@@ -131,6 +131,8 @@ Open your browser and go to **http://localhost:3000**
 2. Press **Enter** or click **Search**
 3. Browse results (10 per page, use Next/Prev to paginate)
 4. Click **▶ Play** on any result
+5. Create Playlist and start adding songs by clicking the **+** on any search result 
+6. Add songs to queue by clicking on **+Queue**, songs in queue is not going to be saved to any playlist. 
 
 ### Player view
 
@@ -154,6 +156,7 @@ Once a song starts playing, you'll see:
    - *"Japanese city pop from the 80s"*
 3. The AI returns personalized suggestions based on your request and listening history
 4. Click any suggestion to **instantly play** it
+5. The AI might return something else instead of songs, since the app is relying on ytp-dlp so it might give a video and not music.
 
 ---
 

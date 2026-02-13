@@ -98,9 +98,10 @@ app.post("/api/seek", async (req, res) => {
 
 app.get("/api/related", async (req, res) => {
   try {
-    const { title, uploader } = req.query;
+    const { title, uploader, limit } = req.query;
     if (!title) return sendError(res, new Error("title query param required"), 400);
-    const results = await related(title, uploader);
+    const maxLimit = Math.min(Number(limit) || 8, 50); // Default 8, max 50
+    const results = await related(title, uploader, maxLimit);
     res.json({ ok: true, results });
   } catch (err) {
     sendError(res, err);

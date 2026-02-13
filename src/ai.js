@@ -42,8 +42,47 @@ function getModel() {
 }
 
 const SYSTEM_PROMPT = `You are Resonance AI, a music recommendation assistant. Suggest songs based on the user's request and history.
-Respond with ONLY valid JSON: {"message":"short friendly reply","suggestions":[{"query":"Artist - Song Title","reason":"brief reason"}]}
-Include 5-6 suggestions. Be specific with artist + song title. If unrelated to music, redirect politely.`;
+Respond with ONLY valid JSON with NO markdown, NO backticks, NO extra text. Use this exact format:
+{"message":"short friendly reply","suggestions":[{"query":"Artist - Song Title","reason":"brief reason"}]}
+Include 5-6 suggestions. Be specific with artist + song title. If unrelated to music, redirect politely.
+CRITICAL: Your entire response must be valid JSON. Do not include any text before or after the JSON object.`;
+
+function cleanJsonResponse(text) {
+  // Remove markdown code blocks if present
+  let cleaned = text.trim();
+  const jsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    cleaned = jsonMatch[1].trim();
+  }
+  
+  // Remove any leading/trailing non-JSON text
+  const jsonStart = cleaned.indexOf('{');
+  const jsonEnd = cleaned.lastIndexOf('}');
+  if (jsonStart !== -1 && jsonEnd !== -1) {
+    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+  }
+  
+  return cleaned;
+}
+
+function validateResponse(parsed) {
+  if (!parsed || typeof parsed !== 'object') {
+    return false;
+  }
+  if (!parsed.message || typeof parsed.message !== 'string') {
+    return false;
+  }
+  if (!Array.isArray(parsed.suggestions)) {
+    return false;
+  }
+  // Validate each suggestion
+  for (const suggestion of parsed.suggestions) {
+    if (!suggestion.query || typeof suggestion.query !== 'string') {
+      return false;
+    }
+  }
+  return true;
+}
 
 export async function chat(userMessage, recentHistory) {
   const model = getModel();
@@ -54,27 +93,54 @@ export async function chat(userMessage, recentHistory) {
   const prompt = `${SYSTEM_PROMPT}${historyBlock}\n\nUser: ${userMessage}`;
 
   let lastErr;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
-      const parsed = JSON.parse(jsonMatch[1].trim());
-      if (!parsed.message || !Array.isArray(parsed.suggestions)) {
-        throw new Error("Invalid AI response format");
+      const text = result.response.text();
+      
+      // Clean and parse the response
+      const cleaned = cleanJsonResponse(text);
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (parseErr) {
+        console.error("JSON parse error:", parseErr.message);
+        console.error("Attempted to parse:", cleaned.substring(0, 200));
+        throw new Error("AI returned invalid JSON format");
       }
+      
+      // Validate the response structure
+      if (!validateResponse(parsed)) {
+        throw new Error("AI response missing required fields");
+      }
+      
       return parsed;
     } catch (err) {
       lastErr = err;
-      if (err.message?.includes("429") && attempt < 1) {
+      console.error(`Chat attempt ${attempt + 1} failed:`, err.message);
+      
+      // Retry on rate limit errors
+      if (err.message?.includes("429") && attempt < 2) {
         await new Promise(r => setTimeout(r, 5000));
         continue;
       }
-      break;
+      
+      // Don't retry on JSON parse errors after first attempt
+      if (err.message?.includes("JSON") && attempt > 0) {
+        break;
+      }
     }
   }
+  
+  // Handle specific error types
   if (lastErr?.message?.includes("429") || lastErr?.message?.includes("quota")) {
     throw new Error("Gemini API quota exceeded — try again later or enable billing at https://ai.google.dev");
   }
-  throw lastErr;
+  
+  if (lastErr?.message?.includes("JSON")) {
+    throw new Error("AI generated invalid response format. Please try rephrasing your request.");
+  }
+  
+  throw lastErr || new Error("Failed to get AI response after multiple attempts");
 }

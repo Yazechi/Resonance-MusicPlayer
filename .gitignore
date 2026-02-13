@@ -3,4 +3,3 @@ node_modules/
 *.log
 listening-history.json
 playlists.json
-*.json

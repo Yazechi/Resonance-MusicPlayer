@@ -7,10 +7,24 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PLAYLISTS_PATH = path.join(__dirname, "..", "playlists.json");
 
 let playlists = [];
-try { playlists = JSON.parse(fs.readFileSync(PLAYLISTS_PATH, "utf8")); } catch { /* fresh start */ }
+try {
+  playlists = JSON.parse(fs.readFileSync(PLAYLISTS_PATH, "utf8"));
+} catch (e) {
+  console.warn("Failed to load playlists.json, using empty list.", e);
+  playlists = [];
+}
 
-function save() {
-  fs.writeFileSync(PLAYLISTS_PATH, JSON.stringify(playlists, null, 2));
+let saveTimeout = null;
+function save(immediate = false) {
+  if (immediate) {
+    fs.writeFileSync(PLAYLISTS_PATH, JSON.stringify(playlists, null, 2));
+    return;
+  }
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    fs.writeFileSync(PLAYLISTS_PATH, JSON.stringify(playlists, null, 2));
+    saveTimeout = null;
+  }, 300); // batch writes within 300ms window
 }
 
 function generateId() {

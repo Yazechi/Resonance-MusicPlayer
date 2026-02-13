@@ -1,1151 +1,2546 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Resonance</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #09090b;
-      --panel: #18181b;
-      --panel-2: #1c1c20;
-      --accent: #6366f1;
-      --accent-2: #8b5cf6;
-      --accent-glow: rgba(99,102,241,0.25);
-      --text: #fafafa;
-      --muted: #71717a;
-      --border: rgba(255,255,255,0.08);
-      --radius: 10px;
-      --radius-sm: 6px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-      padding: 12px 16px;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    h1 { 
-      font-size: 18px; 
-      font-weight: 600; 
-      margin-bottom: 12px; 
-      letter-spacing: -0.02em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .panel {
-      background: var(--panel);
-      padding: 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      margin-bottom: 10px;
-    }
-    .flex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    button {
-      background: var(--accent);
-      color: white; border: none;
-      padding: 7px 12px; border-radius: var(--radius-sm);
-      cursor: pointer; font-weight: 500; font-size: 12px;
-      transition: all 150ms ease;
-      display: inline-flex; align-items: center; gap: 5px;
-    }
-    button:hover:not(:disabled) { background: var(--accent-2); transform: translateY(-1px); }
-    button:active:not(:disabled) { transform: translateY(0); }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-    button.secondary { background: rgba(255,255,255,0.08); }
-    button.secondary:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
-    button.icon { padding: 7px 9px; font-size: 14px; }
-    input[type="text"] {
-      padding: 8px 12px; border-radius: var(--radius-sm);
-      border: 1px solid var(--border); background: rgba(0,0,0,0.3);
-      color: var(--text); width: min(400px, 100%); font-size: 13px; outline: none;
-      transition: border-color 150ms ease, box-shadow 150ms ease;
-    }
-    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
-    .result {
-      display: flex; gap: 10px; padding: 8px;
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      align-items: center; background: rgba(0,0,0,0.2); margin-bottom: 6px;
-      transition: all 150ms ease;
-    }
-    .result:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
-    .result img { width: 72px; height: 40px; object-fit: cover; border-radius: 4px; background: #000; }
-    .result-info { flex: 1; min-width: 0; }
-    .result-title { font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tag { color: var(--muted); font-size: 11px; }
-    .muted { color: var(--muted); }
-    .error { color: #ef4444; font-size: 12px; }
-    .badge {
-      display: inline-block;
-      background: rgba(99,102,241,0.15); color: var(--accent);
-      padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .spinner {
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--accent);
-      border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #searchingOverlay { display: none; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
-    .hidden { display: none !important; }
-
-    /* --- Custom scrollbar --- */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-
-    /* --- Player layout --- */
-    .player-grid {
-      display: grid;
-      grid-template-columns: 1fr 280px;
-      grid-template-rows: auto 1fr;
-      gap: 10px;
-      align-items: start;
-      min-height: calc(100vh - 60px);
-    }
-    @media (max-width: 800px) { .player-grid { grid-template-columns: 1fr; } }
-    .bottom-panels {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    @media (max-width: 800px) { .bottom-panels { grid-template-columns: 1fr; } }
-    .bottom-panel-card {
-      max-height: 340px;
-      overflow-y: auto;
-    }
-    .bottom-panel-card h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
-    .history-item {
-      display: flex; gap: 8px; align-items: center; padding: 6px;
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      background: rgba(0,0,0,0.2); margin-bottom: 4px;
-      transition: all 150ms ease; cursor: pointer;
-    }
-    .history-item:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
-    .history-item .hi-title { flex: 1; font-size: 12px; font-weight: 500; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-item .hi-sub { color: var(--muted); font-size: 10px; white-space: nowrap; }
-    .history-item button { padding: 3px 7px; font-size: 10px; }
-
-    #hero {
-      position: relative;
-      overflow: hidden;
-      border-radius: var(--radius);
-      background: linear-gradient(145deg, var(--panel), #0f0f12);
-      display: flex;
-      flex-direction: column;
-      height: 380px;
-    }
-    #playerLoading {
-      position: absolute; inset: 0; z-index: 10;
-      display: none;
-      background: rgba(0,0,0,0.6);
-      align-items: center; justify-content: center;
-      backdrop-filter: blur(4px);
-    }
-    #playerLoading .spinner { width: 28px; height: 28px; border-width: 3px; }
-
-    /* --- Visualizer: fills the hero card --- */
-    #vizContainer {
-      flex: 1;
-      display: flex;
-      align-items: flex-end;
-      gap: 2px;
-      padding: 12px 12px 0;
-      min-height: 0;
-      overflow: hidden;
-    }
-    .viz-bar {
-      flex: 1;
-      border-radius: 2px 2px 0 0;
-      background: linear-gradient(180deg, var(--accent), var(--accent-2));
-      height: 4px;
-      transition: height 200ms ease;
-      opacity: 0.25;
-    }
-    #vizContainer.playing .viz-bar { opacity: 0.9; }
-
-    #heroMeta { padding: 10px 12px 12px; }
-    #heroTitle { font-size: 15px; font-weight: 600; margin: 4px 0 2px; }
-    #heroUploader { color: var(--muted); margin: 0 0 10px; font-size: 12px; }
-
-    /* --- Progress slider --- */
-    .progress-row {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
-    }
-    .progress-row .time { min-width: 36px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-    .progress-row .time.right { text-align: right; }
-    input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; cursor: pointer; }
-    input[type="range"]::-webkit-slider-runnable-track {
-      height: 4px; border-radius: 2px;
-      background: rgba(255,255,255,0.1);
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 12px; height: 12px; border-radius: 50%;
-      background: var(--accent); margin-top: -4px;
-      box-shadow: 0 0 8px var(--accent-glow);
-      transition: transform 150ms ease;
-    }
-    input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
-    input[type="range"]::-moz-range-track {
-      height: 4px; border-radius: 2px;
-      background: rgba(255,255,255,0.1);
-    }
-    input[type="range"]::-moz-range-thumb {
-      width: 12px; height: 12px; border-radius: 50%;
-      background: var(--accent); border: none;
-    }
-
-    .controls-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .vol-label { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; margin-left: auto; }
-    .vol-label input[type="range"] { width: 80px; }
-
-    /* --- Recs sidebar --- */
-    .rec-item {
-      display: flex; gap: 8px; margin-bottom: 6px; align-items: center;
-      background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px;
-      transition: all 150ms ease;
-    }
-    .rec-item:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
-    .rec-item img { width: 48px; height: 28px; object-fit: cover; border-radius: 4px; }
-    .rec-title { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rec-tag { font-size: 10px; color: var(--muted); }
-
-    .pager { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 8px; }
-
-    /* --- Playlist section --- */
-    .playlist-section { margin-bottom: 10px; }
-    .playlist-header { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-    .playlist-header h3 { margin: 0; font-size: 13px; font-weight: 600; }
-    .playlist-card {
-      background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: var(--radius-sm);
-      padding: 10px; margin-bottom: 6px; transition: all 150ms ease;
-    }
-    .playlist-card:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
-    .playlist-card-header { display: flex; gap: 8px; align-items: center; }
-    .playlist-card-header .pl-name {
-      flex: 1; font-weight: 600; font-size: 13px; cursor: pointer;
-      background: none; border: none; color: var(--text); padding: 0;
-      min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .playlist-card-header .pl-name:hover { text-decoration: underline; }
-    .playlist-card-header .pl-count { color: var(--muted); font-size: 11px; white-space: nowrap; }
-    .playlist-card-header button { padding: 4px 8px; font-size: 11px; }
-    .playlist-tracks { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
-    .playlist-track {
-      display: flex; gap: 8px; align-items: center; padding: 4px 0; font-size: 12px;
-    }
-    .playlist-track .pt-num { color: var(--muted); font-size: 11px; min-width: 20px; }
-    .playlist-track .pt-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .playlist-track .pt-uploader { color: var(--muted); font-size: 11px; }
-    .playlist-track button { padding: 2px 6px; font-size: 10px; }
-    .pl-playback-bar {
-      display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap;
-    }
-    .pl-playback-bar .badge { font-size: 9px; }
-    .pl-mode-btn { padding: 4px 8px; font-size: 11px; }
-    .pl-mode-btn.active { background: var(--accent-2); box-shadow: 0 0 8px var(--accent-glow); }
-    .pl-create-row { display: flex; gap: 6px; align-items: center; }
-    .pl-create-row input { width: min(200px, 100%); padding: 6px 10px; font-size: 12px; }
-    .pl-rename-input {
-      background: rgba(0,0,0,0.3); border: 1px solid var(--accent); color: var(--text);
-      padding: 2px 6px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
-      outline: none; width: 150px;
-    }
-    .add-to-pl-wrap { position: relative; display: inline-block; }
-    .add-to-pl-menu {
-      position: absolute; top: 100%; right: 0; z-index: 50;
-      background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
-      min-width: 160px; max-height: 200px; overflow-y: auto;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4); padding: 4px 0;
-    }
-    .add-to-pl-menu .pl-menu-item {
-      display: block; width: 100%; text-align: left; padding: 6px 10px; font-size: 12px;
-      background: none; border: none; color: var(--text); cursor: pointer; border-radius: 0;
-    }
-    .add-to-pl-menu .pl-menu-item:hover { background: rgba(99,102,241,0.15); }
-    .nq-item { font-size: 12px; padding: 4px 6px; color: var(--muted); border-radius: var(--radius-sm); }
-    .nq-item:hover { background: rgba(255,255,255,0.04); }
-    .nq-item.active { color: var(--text); font-weight: 600; background: rgba(99,102,241,0.1); }
-
-    /* --- AI Chat Panel --- */
-    #chatToggle {
-      position: fixed; bottom: 16px; right: 16px; z-index: 100;
-      width: 44px; height: 44px; border-radius: 50%;
-      background: linear-gradient(135deg, #10b981, var(--accent));
-      border: none; cursor: pointer; font-size: 18px;
-      box-shadow: 0 4px 16px rgba(16,185,129,0.3);
-      transition: all 150ms ease;
-      display: flex; align-items: center; justify-content: center;
-    }
-    #chatToggle:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
-    #chatPanel {
-      position: fixed; bottom: 72px; right: 16px; z-index: 99;
-      width: 340px; max-height: 440px;
-      background: var(--panel);
-      border: 1px solid var(--border); border-radius: var(--radius);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      display: none; flex-direction: column; overflow: hidden;
-    }
-    #chatPanel.open { display: flex; }
-    #chatHeader {
-      padding: 10px 12px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(16,185,129,0.05);
-    }
-    #chatHeader h3 { margin: 0; font-size: 13px; font-weight: 600; flex: 1; }
-    #chatHeader .tag { color: #10b981; font-size: 10px; }
-    #chatMessages {
-      flex: 1; overflow-y: auto; padding: 10px 12px;
-      display: flex; flex-direction: column; gap: 8px;
-      min-height: 160px; max-height: 280px;
-    }
-    .chat-msg {
-      max-width: 88%; padding: 8px 12px; border-radius: var(--radius-sm);
-      font-size: 12px; line-height: 1.5; word-wrap: break-word;
-    }
-    .chat-msg.user {
-      align-self: flex-end;
-      background: var(--accent);
-      color: white; border-bottom-right-radius: 2px;
-    }
-    .chat-msg.ai {
-      align-self: flex-start;
-      background: rgba(255,255,255,0.05); color: var(--text);
-      border-bottom-left-radius: 2px;
-    }
-    .chat-msg.ai .suggestion-btn {
-      display: inline-block; margin: 4px 4px 0 0;
-      padding: 3px 8px; border-radius: 4px; font-size: 10px;
-      background: rgba(16,185,129,0.15); color: #6ee7b7;
-      border: 1px solid rgba(16,185,129,0.2); cursor: pointer;
-      transition: all 150ms ease;
-    }
-    .chat-msg.ai .suggestion-btn:hover { background: rgba(16,185,129,0.25); }
-    #chatInputRow {
-      padding: 8px 10px; border-top: 1px solid var(--border);
-      display: flex; gap: 6px;
-    }
-    #chatInput {
-      flex: 1; padding: 8px 10px; border-radius: var(--radius-sm);
-      border: 1px solid var(--border); background: rgba(0,0,0,0.3);
-      color: var(--text); font-size: 12px; outline: none;
-    }
-    #chatInput:focus { border-color: #10b981; }
-    #chatSend {
-      padding: 8px 12px; border-radius: var(--radius-sm);
-      background: #10b981;
-      border: none; color: white; cursor: pointer; font-weight: 500; font-size: 12px;
-    }
-    #chatSend:hover { background: #059669; }
-    #chatSend:disabled { opacity: 0.4; cursor: not-allowed; }
-    .chat-typing { color: var(--muted); font-size: 11px; font-style: italic; padding: 2px 0; }
-  </style>
-</head>
-<body>
-  <h1><span style="font-size: 20px;">🎵</span> Resonance</h1>
-
-  <!-- ===== SEARCH VIEW ===== -->
-  <div id="searchView">
-    <!-- Playlist Section -->
-    <div class="panel playlist-section" id="playlistSection">
-      <div class="playlist-header">
-        <h3>🎧 Playlists</h3>
-        <div class="pl-create-row">
-          <input id="newPlName" type="text" placeholder="New playlist name…" />
-          <button id="createPlBtn">+ Create</button>
-        </div>
-      </div>
-      <div id="playlistList"></div>
-    </div>
-
-    <div class="panel flex">
-      <input id="searchInput" type="text" placeholder="Search for music..." />
-      <button id="searchBtn">Search</button>
-      <div id="searchingOverlay"><span class="spinner"></span> Searching</div>
-      <span id="searchError" class="error"></span>
-    </div>
-    <div class="panel">
-      <div class="flex" style="justify-content: space-between; margin-bottom: 6px;">
-        <h3 style="margin:0;font-size:13px;font-weight:600;">Results</h3>
-        <span class="muted" id="resultsCount" style="font-size:11px;"></span>
-      </div>
-      <div id="results"></div>
-      <div class="pager" id="pager"></div>
-    </div>
-  </div>
-
-  <!-- ===== PLAYER VIEW ===== -->
-  <div id="playerView" class="player-grid hidden">
-    <!-- Left: hero card -->
-    <div class="panel" id="hero" style="padding:0;">
-      <div id="playerLoading"><span class="spinner"></span></div>
-      <div id="vizContainer"></div>
-      <div id="heroMeta">
-        <div class="badge" id="playerStatus">IDLE</div>
-        <h2 id="heroTitle">Nothing playing</h2>
-        <p id="heroUploader"></p>
-
-        <div class="progress-row">
-          <span class="time" id="curTime">0:00</span>
-          <input type="range" id="progress" min="0" max="0" value="0" step="1" />
-          <span class="time right" id="totalTime">0:00</span>
-        </div>
-
-        <div class="controls-row">
-          <button id="pauseBtn" class="icon" title="Pause">⏸</button>
-          <button id="resumeBtn" class="icon" title="Resume">▶</button>
-          <button id="stopBtn" class="icon" title="Stop">⏹</button>
-          <button class="secondary" id="backBtn">← Back</button>
-          <div class="vol-label">🔊 <input type="range" id="volume" min="0" max="100" value="50" /></div>
-        </div>
-        <div id="controlError" class="error" style="margin-top:4px;"></div>
-      </div>
-    </div>
-
-    <!-- Right: recommendations -->
-    <div class="panel" style="max-height: 400px; overflow-y: auto;">
-      <div class="flex" style="justify-content: space-between; margin-bottom: 6px;">
-        <h3 style="margin:0;font-size:12px;font-weight:600;">Related</h3>
-        <span class="muted" style="font-size:10px;" id="recsLabel">Similar music</span>
-      </div>
-      <div id="recs"><div class="muted" style="font-size:11px;">Play a song to see recommendations.</div></div>
-    </div>
-
-    <!-- Bottom row: Queue + History -->
-    <div class="bottom-panels">
-      <div class="panel bottom-panel-card" id="queuePanelCard">
-        <h3>📋 Queue</h3>
-        <div id="queuePanel" class="hidden">
-          <div style="margin-bottom:6px;"><span class="badge" id="queueMode">Sequential</span></div>
-          <div id="queueList"></div>
-        </div>
-        <div id="queueEmpty" class="muted" style="font-size:12px;">Play a playlist to see the queue here.</div>
-      </div>
-      <div class="panel bottom-panel-card">
-        <h3>🕐 Recently Played</h3>
-        <div id="historyList"><div class="muted" style="font-size:12px;">No history yet.</div></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    /* ---- DOM refs ---- */
-    const resultsEl     = document.getElementById("results");
-    const recsEl        = document.getElementById("recs");
-    const pagerEl       = document.getElementById("pager");
-    const resultsCountEl= document.getElementById("resultsCount");
-    const searchErrorEl = document.getElementById("searchError");
-    const controlErrorEl= document.getElementById("controlError");
-    const searchingOvl  = document.getElementById("searchingOverlay");
-    const playerView    = document.getElementById("playerView");
-    const searchView    = document.getElementById("searchView");
-    const heroTitle     = document.getElementById("heroTitle");
-    const heroUploader  = document.getElementById("heroUploader");
-    const playerStatus  = document.getElementById("playerStatus");
-    const playerLoading = document.getElementById("playerLoading");
-    const vizContainer  = document.getElementById("vizContainer");
-    const progressEl    = document.getElementById("progress");
-    const curTimeEl     = document.getElementById("curTime");
-    const totalTimeEl   = document.getElementById("totalTime");
-    const recsLabel     = document.getElementById("recsLabel");
-    const playlistListEl= document.getElementById("playlistList");
-    const queuePanel    = document.getElementById("queuePanel");
-    const queueList     = document.getElementById("queueList");
-    const queueModeEl   = document.getElementById("queueMode");
-    const queueEmpty    = document.getElementById("queueEmpty");
-    const historyListEl = document.getElementById("historyList");
-
-    /* ---- state ---- */
-    let results       = [];
-    let playingId     = null;
-    let playPendingId = null;
-    let page          = 0;
-    const PAGE_SIZE   = 10;
-    let lastPosition  = 0;
-    let lastDuration  = 0;
-    let lastUpdateTs  = Date.now();
-    let lastStatus    = "idle";
-    let isSeeking     = false;
-    let currentTitle  = "";
-    let currentUploader = "";
-    let playlists     = [];
-    let expandedPl    = null;
-    let searchDebounce = null;
-
-    /* ---- playlist queue state ---- */
-    let plQueue       = [];
-    let plQueueIndex  = -1;
-    let plQueueMode   = "sequential"; // sequential | shuffle | loop
-    let plQueueActive = false;
-
-    /* ---- helpers ---- */
-    async function api(path, opts = {}) {
-      const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
-      const d = await r.json();
-      if (!d.ok) throw new Error(d.error || "Request failed");
-      return d;
-    }
-    function fmt(sec) {
-      const s = Math.max(0, Math.floor(sec || 0));
-      return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
-    }
-
-    /* ---- build visualizer bars ---- */
-    const BAR_COUNT = 50;
-    let vizHeight = 0;
-    const barTargets = new Array(BAR_COUNT).fill(6);
-    let lastTargetTs = 0;
-    function measureViz() { vizHeight = vizContainer.clientHeight || 200; }
-    window.addEventListener("resize", measureViz);
-    (function buildViz() {
-      vizContainer.innerHTML = "";
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const b = document.createElement("div");
-        b.className = "viz-bar";
-        vizContainer.appendChild(b);
+  <head>
+    <meta charset="UTF-8" />
+    <title>Resonance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #09090b;
+        --panel: #18181b;
+        --panel-2: #1c1c20;
+        --accent: #6366f1;
+        --accent-2: #8b5cf6;
+        --accent-glow: rgba(99, 102, 241, 0.25);
+        --text: #fafafa;
+        --muted: #71717a;
+        --border: rgba(255, 255, 255, 0.08);
+        --radius: 10px;
+        --radius-sm: 6px;
       }
-    })();
-
-    function animateViz(playing) {
-      if (!vizHeight) measureViz();
-      vizContainer.classList.toggle("playing", playing);
-      const bars = vizContainer.children;
-      const now = Date.now();
-      if (playing && now - lastTargetTs > 220) {
-        const phase = now / 800;
-        for (let i = 0; i < BAR_COUNT; i++) {
-          const wave = Math.sin(phase + i * 0.35) * 0.3 + 0.5;
-          const jitter = 0.85 + Math.random() * 0.3;
-          barTargets[i] = Math.max(8, Math.floor(vizHeight * wave * jitter));
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        padding: 12px 16px 80px 16px; /* Added bottom padding to account for mini player */
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panel {
+        background: var(--panel);
+        padding: 12px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        margin-bottom: 10px;
+      }
+      .flex {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      button {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 7px 12px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 12px;
+        transition: all 150ms ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      button:hover:not(:disabled) {
+        background: var(--accent-2);
+        transform: translateY(-1px);
+      }
+      button:active:not(:disabled) {
+        transform: translateY(0);
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      button.secondary {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      button.secondary:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      button.icon {
+        padding: 7px 9px;
+        font-size: 14px;
+      }
+      input[type="text"] {
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        width: min(400px, 100%);
+        font-size: 13px;
+        outline: none;
+        transition:
+          border-color 150ms ease,
+          box-shadow 150ms ease;
+      }
+      input[type="text"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-glow);
+      }
+      .result {
+        display: flex;
+        gap: 10px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        align-items: center;
+        background: rgba(0, 0, 0, 0.2);
+        margin-bottom: 6px;
+        transition: all 150ms ease;
+      }
+      .result:hover {
+        border-color: var(--accent);
+        background: rgba(99, 102, 241, 0.05);
+      }
+      .result img {
+        width: 72px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        background: #000;
+      }
+      .result-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .result-title {
+        font-weight: 500;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tag {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .error {
+        color: #ef4444;
+        font-size: 12px;
+      }
+      .badge {
+        display: inline-block;
+        background: rgba(99, 102, 241, 0.15);
+        color: var(--accent);
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-        lastTargetTs = now;
       }
-      for (let i = 0; i < bars.length; i++) {
-        bars[i].style.height = playing ? `${barTargets[i]}px` : "6px";
+      #searchingOverlay {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
       }
-    }
+      .hidden {
+        display: none !important;
+      }
 
-    /* ---- search results ---- */
-    function renderResults(items) {
-      const start = page * PAGE_SIZE;
-      const slice = items.slice(start, start + PAGE_SIZE);
-      const total = items.length;
-      resultsCountEl.textContent = total ? `${total} results` : "";
-      resultsEl.innerHTML = "";
-      if (!total) { resultsEl.innerHTML = '<div class="muted">No results.</div>'; renderPager(0); return; }
-      slice.forEach((item) => {
-        const row = document.createElement("div");
-        row.className = "result";
-        row.innerHTML = `
-          <img src="${item.thumbnail || ""}" alt="">
-          <div class="result-info">
-            <div class="result-title">${esc(item.title || "Untitled")}</div>
-            <div class="tag">${esc(item.uploader || "")}${item.duration ? " • " + item.duration : ""}</div>
-          </div>`;
-        const btn = document.createElement("button");
-        const isCur = playingId === item.id;
-        btn.textContent = isCur ? "Playing" : "▶ Play";
-        btn.disabled = !!playPendingId || isCur;
-        btn.onclick = () => { plQueueActive = false; handlePlay(item.id || item.webpageUrl || item.title, item.id); };
-        row.appendChild(btn);
+      /* --- Custom scrollbar --- */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
 
-        // Add-to-playlist button
-        if (playlists.length > 0) {
-          const wrap = document.createElement("div");
-          wrap.className = "add-to-pl-wrap";
-          const addBtn = document.createElement("button");
-          addBtn.className = "secondary";
-          addBtn.textContent = "+";
-          addBtn.title = "Add to playlist";
-          addBtn.onclick = (e) => {
-            e.stopPropagation();
-            const existing = wrap.querySelector(".add-to-pl-menu");
-            if (existing) { existing.remove(); return; }
-            document.querySelectorAll(".add-to-pl-menu").forEach(m => m.remove());
-            const menu = document.createElement("div");
-            menu.className = "add-to-pl-menu";
-            playlists.forEach((pl) => {
-              const mi = document.createElement("button");
-              mi.className = "pl-menu-item";
-              mi.textContent = pl.name;
-              mi.onclick = async (ev) => {
-                ev.stopPropagation();
-                try {
-                  await api(`/api/playlists/${pl.id}/tracks`, {
-                    method: "POST",
-                    body: JSON.stringify({ id: item.id, title: item.title, uploader: item.uploader, duration: item.duration, thumbnail: item.thumbnail })
-                  });
-                  mi.textContent = "✓ Added";
-                  mi.disabled = true;
-                  await loadPlaylists();
-                } catch (err) { mi.textContent = err.message; }
+      /* --- Player layout --- */
+      .player-grid {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        grid-template-rows: auto 1fr;
+        gap: 10px;
+        align-items: start;
+        min-height: calc(100vh - 60px);
+      }
+      @media (max-width: 800px) {
+        .player-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .bottom-panels {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 800px) {
+        .bottom-panels {
+          grid-template-columns: 1fr;
+        }
+      }
+      .bottom-panel-card {
+        max-height: 340px;
+        overflow-y: auto;
+      }
+      .bottom-panel-card h3 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .history-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: rgba(0, 0, 0, 0.2);
+        margin-bottom: 4px;
+        transition: all 150ms ease;
+        cursor: pointer;
+      }
+      .history-item:hover {
+        border-color: var(--accent);
+        background: rgba(99, 102, 241, 0.05);
+      }
+      .history-item .hi-title {
+        flex: 1;
+        font-size: 12px;
+        font-weight: 500;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .history-item .hi-sub {
+        color: var(--muted);
+        font-size: 10px;
+        white-space: nowrap;
+      }
+      .history-item button {
+        padding: 3px 7px;
+        font-size: 10px;
+      }
+
+      #hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius);
+        background: linear-gradient(145deg, var(--panel), #0f0f12);
+        display: flex;
+        flex-direction: column;
+        height: 380px;
+      }
+      #playerLoading {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        background: rgba(0, 0, 0, 0.6);
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+      #playerLoading .spinner {
+        width: 28px;
+        height: 28px;
+        border-width: 3px;
+      }
+
+      /* --- Visualizer: fills the hero card --- */
+      #vizContainer {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        padding: 12px 12px 0;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .viz-bar {
+        flex: 1;
+        border-radius: 2px 2px 0 0;
+        background: linear-gradient(180deg, var(--accent), var(--accent-2));
+        height: 4px;
+        transition: height 200ms ease;
+        opacity: 0.25;
+      }
+      #vizContainer.playing .viz-bar {
+        opacity: 0.9;
+      }
+
+      #heroMeta {
+        padding: 10px 12px 12px;
+      }
+      #heroTitle {
+        font-size: 15px;
+        font-weight: 600;
+        margin: 4px 0 2px;
+      }
+      #heroUploader {
+        color: var(--muted);
+        margin: 0 0 10px;
+        font-size: 12px;
+      }
+
+      /* --- Progress slider --- */
+      .progress-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .progress-row .time {
+        min-width: 36px;
+        font-size: 11px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .progress-row .time.right {
+        text-align: right;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        width: 100%;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        margin-top: -4px;
+      }
+      input[type="range"]::-moz-range-track {
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: none;
+        cursor: pointer;
+      }
+
+      /* --- Control buttons --- */
+      .ctrl-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .ctrl-row button {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+      .ctrl-row button.icon {
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+
+      /* --- Recommendations panel --- */
+      .rec-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: rgba(0, 0, 0, 0.2);
+        margin-bottom: 4px;
+        transition: all 150ms ease;
+      }
+      .rec-item:hover {
+        border-color: var(--accent);
+        background: rgba(99, 102, 241, 0.05);
+      }
+      .rec-item img {
+        width: 52px;
+        height: 30px;
+        object-fit: cover;
+        border-radius: 4px;
+        background: #000;
+      }
+      .rec-title {
+        font-weight: 500;
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .rec-tag {
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      /* --- Pagination --- */
+      .pager {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+      }
+      .pager button {
+        padding: 4px 10px;
+        font-size: 11px;
+      }
+
+      /* --- Playlist styles --- */
+      .playlist-section {
+        padding: 12px;
+      }
+      .playlist-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .playlist-header h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .playlist-card {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px;
+        margin-bottom: 6px;
+        transition: all 150ms ease;
+      }
+      .playlist-card:hover {
+        border-color: var(--accent);
+        background: rgba(99, 102, 241, 0.05);
+      }
+      .playlist-card-header {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .playlist-card-header .pl-name {
+        flex: 1;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        color: var(--text);
+        padding: 0;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .playlist-card-header .pl-name:hover {
+        text-decoration: underline;
+      }
+      .playlist-card-header .pl-count {
+        color: var(--muted);
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .playlist-card-header button {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      .playlist-tracks {
+        margin-top: 8px;
+        padding-top: 6px;
+        border-top: 1px solid var(--border);
+      }
+      .playlist-track {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 4px 0;
+        font-size: 12px;
+      }
+      .playlist-track .pt-num {
+        color: var(--muted);
+        font-size: 11px;
+        min-width: 20px;
+      }
+      .playlist-track .pt-title {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .playlist-track .pt-uploader {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .playlist-track button {
+        padding: 2px 6px;
+        font-size: 10px;
+      }
+      .pl-playback-bar {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+      .pl-playback-bar .badge {
+        font-size: 9px;
+      }
+      .pl-mode-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      .pl-mode-btn.active {
+        background: var(--accent-2);
+        box-shadow: 0 0 8px var(--accent-glow);
+      }
+      .pl-create-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .pl-create-row input {
+        width: min(200px, 100%);
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .pl-rename-input {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--accent);
+        color: var(--text);
+        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 600;
+        outline: none;
+        width: 150px;
+      }
+      .add-to-pl-wrap {
+        position: relative;
+        display: inline-block;
+      }
+      .add-to-pl-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 50;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        min-width: 160px;
+        max-height: 200px;
+        overflow-y: auto;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        padding: 4px 0;
+      }
+      .add-to-pl-menu .pl-menu-item {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: none;
+        border: none;
+        color: var(--text);
+        cursor: pointer;
+        border-radius: 0;
+      }
+      .add-to-pl-menu .pl-menu-item:hover {
+        background: rgba(99, 102, 241, 0.15);
+      }
+      .nq-item {
+        font-size: 12px;
+        padding: 4px 6px;
+        color: var(--muted);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .nq-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .nq-item.active {
+        color: var(--text);
+        font-weight: 600;
+        background: rgba(99, 102, 241, 0.1);
+      }
+
+      /* --- AI Chat Panel --- */
+      #chatToggle {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        z-index: 1002;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981, var(--accent));
+        border: none;
+        cursor: move;
+        font-size: 18px;
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        transition: none; /* Disable transition for smooth dragging */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+      }
+      #chatToggle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      }
+      #chatToggle:active {
+        cursor: grabbing;
+      }
+      #chatToggle.dragging {
+        cursor: grabbing;
+      }
+      #chatPanel {
+        position: fixed;
+        bottom: 72px;
+        right: 16px;
+        z-index: 1001;
+        width: 340px;
+        max-height: 440px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        transition: none; /* Disable transition for instant positioning */
+      }
+      #chatPanel.open {
+        display: flex;
+      }
+      #chatHeader {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(16, 185, 129, 0.05);
+        user-select: none;
+      }
+      #chatHeader h3 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        flex: 1;
+      }
+      #chatHeader .tag {
+        color: #10b981;
+        font-size: 10px;
+      }
+      #chatMessages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 160px;
+        max-height: 280px;
+      }
+      .chat-msg {
+        max-width: 88%;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+      .chat-msg.user {
+        align-self: flex-end;
+        background: var(--accent);
+        color: white;
+        border-bottom-right-radius: 2px;
+      }
+      .chat-msg.ai {
+        align-self: flex-start;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        border-bottom-left-radius: 2px;
+      }
+      .chat-msg.ai .suggestion-btn {
+        display: inline-block;
+        margin: 4px 4px 0 0;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        background: rgba(16, 185, 129, 0.15);
+        color: #6ee7b7;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        cursor: pointer;
+        transition: all 150ms ease;
+      }
+      .chat-msg.ai .suggestion-btn:hover {
+        background: rgba(16, 185, 129, 0.25);
+      }
+      #chatInputRow {
+        padding: 10px 12px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 6px;
+      }
+      #chatInput {
+        flex: 1;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font-size: 12px;
+        outline: none;
+      }
+      #chatInput:focus {
+        border-color: #10b981;
+      }
+      #chatSend {
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        background: #10b981;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 12px;
+      }
+      #chatSend:hover {
+        background: #059669;
+      }
+      #chatSend:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .chat-typing {
+        color: var(--muted);
+        font-size: 11px;
+        font-style: italic;
+        padding: 2px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1><span style="font-size: 20px">🎵</span> Resonance</h1>
+
+    <!-- ===== SEARCH VIEW ===== -->
+    <div id="searchView">
+      <!-- Playlist Section -->
+      <div class="panel playlist-section" id="playlistSection">
+        <div class="playlist-header">
+          <h3>🎧 Playlists</h3>
+          <div class="pl-create-row">
+            <input
+              id="newPlName"
+              type="text"
+              placeholder="New playlist name…"
+            />
+            <button id="createPlBtn">+ Create</button>
+          </div>
+        </div>
+        <div id="playlistList"></div>
+      </div>
+
+      <div class="panel flex">
+        <input id="searchInput" type="text" placeholder="Search for music..." />
+        <button id="searchBtn">Search</button>
+        <div id="searchingOverlay"><span class="spinner"></span> Searching</div>
+        <span id="searchError" class="error"></span>
+      </div>
+      <div class="panel">
+        <div
+          class="flex"
+          style="justify-content: space-between; margin-bottom: 6px"
+        >
+          <h3 style="margin: 0; font-size: 13px; font-weight: 600">Results</h3>
+          <span class="muted" id="resultsCount" style="font-size: 11px"></span>
+        </div>
+        <div id="results"></div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </div>
+
+    <!-- Mini player bar (persistent) - z-index lowered to avoid overlap -->
+    <div
+      id="miniPlayerBar"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 90;
+        background: var(--panel-2);
+        color: var(--text);
+        border-top: 1px solid var(--border);
+        padding: 10px 18px;
+        box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.18);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      "
+    >
+      <img
+        id="miniPlayerThumb"
+        src=""
+        alt=""
+        style="
+          width: 38px;
+          height: 22px;
+          object-fit: cover;
+          border-radius: 4px;
+          background: #000;
+        "
+      />
+      <div style="flex: 1; min-width: 0">
+        <div
+          id="miniPlayerTitle"
+          style="
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          "
+        ></div>
+        <div
+          id="miniPlayerUploader"
+          style="font-size: 11px; color: var(--muted)"
+        ></div>
+      </div>
+      <button id="miniPlayerOpenBtn" style="padding: 6px 14px; font-size: 12px">
+        Open Player
+      </button>
+    </div>
+
+    <!-- ===== PLAYER VIEW ===== -->
+    <div id="playerView" class="player-grid hidden">
+      <!-- Left: hero card -->
+      <div class="panel" id="hero" style="padding: 0">
+        <div id="playerLoading"><span class="spinner"></span></div>
+        <div id="vizContainer"></div>
+        <div id="heroMeta">
+          <div class="badge" id="playerStatus">IDLE</div>
+          <h2 id="heroTitle">Nothing playing</h2>
+          <p id="heroUploader"></p>
+
+          <div class="progress-row">
+            <span class="time" id="curTime">0:00</span>
+            <input
+              type="range"
+              id="progress"
+              min="0"
+              max="0"
+              value="0"
+              step="1"
+            />
+            <span class="time right" id="totalTime">—</span>
+          </div>
+
+          <div class="ctrl-row">
+            <button id="prevBtn" class="icon" title="Previous">⏮</button>
+            <button id="pauseBtn" class="icon" title="Pause">⏸</button>
+            <button id="resumeBtn" class="icon" title="Play">▶</button>
+            <button id="nextBtn" class="icon" title="Next">⏭</button>
+            <button id="stopBtn" class="secondary icon" title="Stop">⏹</button>
+            <label
+              style="
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--muted);
+                font-size: 11px;
+              "
+            >
+              🔊
+              <input
+                type="range"
+                id="volume"
+                min="0"
+                max="100"
+                value="70"
+                style="width: 80px"
+              />
+            </label>
+            <button id="backBtn" class="secondary" style="margin-left: auto">
+              ← Back to Search
+            </button>
+          </div>
+          <span id="controlError" class="error"></span>
+        </div>
+      </div>
+
+      <!-- Right: sidebar -->
+      <div class="panel" id="recsCard">
+        <h3 style="margin: 0 0 8px; font-size: 13px; font-weight: 600">
+          Recommended
+        </h3>
+        <div id="recs" style="max-height: 320px; overflow-y: auto"></div>
+      </div>
+
+      <!-- Bottom: two panels side by side -->
+      <div class="bottom-panels">
+        <div class="panel bottom-panel-card">
+          <h3>History</h3>
+          <div id="historyList"></div>
+        </div>
+        <div class="panel bottom-panel-card">
+          <h3>Queue</h3>
+          <div id="queuePanel"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const esc = (t) =>
+        (t ?? "").replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[m],
+        );
+      const fmt = (s) => {
+        const m = Math.floor(s / 60);
+        const ss = Math.floor(s % 60);
+        return `${m}:${ss.toString().padStart(2, "0")}`;
+      };
+
+      async function api(path, opts = {}) {
+        const r = await fetch(path, {
+          ...opts,
+          headers: {
+            "Content-Type": "application/json",
+            ...(opts.headers || {}),
+          },
+        });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.error || "Request failed");
+        return d;
+      }
+
+      /* ==== DOM refs ==== */
+      const searchView = document.getElementById("searchView");
+      const playerView = document.getElementById("playerView");
+      const searchingOvl = document.getElementById("searchingOverlay");
+      const searchErrorEl = document.getElementById("searchError");
+      const resultsEl = document.getElementById("results");
+      const pagerEl = document.getElementById("pager");
+      const playerLoading = document.getElementById("playerLoading");
+      const controlErrorEl = document.getElementById("controlError");
+      const progressEl = document.getElementById("progress");
+      const curTimeEl = document.getElementById("curTime");
+      const totalTimeEl = document.getElementById("totalTime");
+      const heroTitle = document.getElementById("heroTitle");
+      const heroUploader = document.getElementById("heroUploader");
+      const playerStatus = document.getElementById("playerStatus");
+      const recsEl = document.getElementById("recs");
+      const historyListEl = document.getElementById("historyList");
+      const playlistListEl = document.getElementById("playlistList");
+      const queuePanelEl = document.getElementById("queuePanel");
+      const vizContainer = document.getElementById("vizContainer");
+
+      /* ==== State ==== */
+      let results = [];
+      let page = 0;
+      const PAGE_SIZE = 10;
+      let lastStatus = "idle";
+      let lastPosition = 0;
+      let lastDuration = 0;
+      let lastUpdateTs = Date.now();
+      let isSeeking = false;
+      let playingId = null;
+      let playPendingId = null;
+      let currentTitle = "";
+      let currentUploader = "";
+      let playlists = [];
+      let expandedPl = null;
+      let searchDebounce = null;
+      let plQueueActive = false;
+      let plQueueId = null;
+      let plQueueMode = "sequential";
+      let plQueueTracks = [];
+      let plQueueIndex = 0;
+
+      // General queue system (independent from playlist queue)
+      let generalQueue = [];
+      let generalQueueActive = false;
+      let generalQueueIndex = 0;
+
+      // Recommendations infinite scroll
+      let allRecs = [];
+      let displayedRecsCount = 0;
+      const RECS_PER_PAGE = 12;
+      let isLoadingMoreRecs = false;
+
+      /* ==== Visualizer bars ==== */
+      for (let i = 0; i < 60; i++) {
+        const bar = document.createElement("div");
+        bar.className = "viz-bar";
+        vizContainer.appendChild(bar);
+      }
+      const bars = Array.from(vizContainer.querySelectorAll(".viz-bar"));
+      function animateViz(isPlaying) {
+        if (!isPlaying) {
+          bars.forEach((b) => {
+            b.style.height = "4px";
+          });
+          vizContainer.classList.remove("playing");
+          return;
+        }
+        vizContainer.classList.add("playing");
+        bars.forEach((b) => {
+          const h = 4 + Math.random() * 60;
+          b.style.height = `${h}px`;
+        });
+      }
+
+      /* ==== mini player ==== */
+      function updateMiniPlayerBar() {
+        const bar = document.getElementById("miniPlayerBar");
+        if (lastStatus === "idle" || !currentTitle) {
+          bar.style.display = "none";
+          return;
+        }
+        bar.style.display = "flex";
+        document.getElementById("miniPlayerTitle").textContent = currentTitle;
+        document.getElementById("miniPlayerUploader").textContent =
+          currentUploader;
+        document.getElementById("miniPlayerThumb").src =
+          window.lastMetaThumb || "";
+      }
+      document.getElementById("miniPlayerOpenBtn").onclick = showPlayer;
+
+      /* ==== Render search results ==== */
+      function renderResults(data) {
+        // Append vs replace: if page is 0, clear; otherwise append next chunk
+        const slice = data.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+        if (page === 0) resultsEl.innerHTML = "";
+        if (!slice.length) {
+          if (page === 0) {
+            resultsEl.innerHTML =
+              '<div class="muted" style="font-size:11px;">No results.</div>';
+          }
+        } else {
+          slice.forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "result";
+            row.innerHTML = `
+            <img src="${item.thumbnail || ""}" alt="">
+            <div class="result-info">
+              <div class="result-title">${esc(item.title || "Untitled")}</div>
+              <div class="tag">${esc(item.uploader || "")} · ${item.duration || ""}</div>
+            </div>`;
+            const btn = document.createElement("button");
+            btn.className = "icon";
+            const isCur = playingId === item.id;
+            btn.textContent = isCur ? "🔊" : "▶";
+            btn.disabled = !!playPendingId || isCur;
+            btn.onclick = () => {
+              // Don't clear queues - song will be added to queue automatically
+              handlePlay(item.id || item.webpageUrl || item.title, item.id);
+            };
+            row.appendChild(btn);
+
+            // Add to Queue button
+            const queueBtn = document.createElement("button");
+            queueBtn.className = "secondary";
+            queueBtn.textContent = "+ Queue";
+            queueBtn.title = "Add to queue";
+            queueBtn.style.fontSize = "11px";
+            queueBtn.style.padding = "4px 8px";
+            queueBtn.onclick = () => {
+              addToGeneralQueue(item);
+              queueBtn.textContent = "✓ Added";
+              queueBtn.disabled = true;
+              setTimeout(() => {
+                queueBtn.textContent = "+ Queue";
+                queueBtn.disabled = false;
+              }, 1500);
+            };
+            row.appendChild(queueBtn);
+
+            // Add-to-playlist button
+            if (playlists.length > 0) {
+              const wrap = document.createElement("div");
+              wrap.className = "add-to-pl-wrap";
+              const addBtn = document.createElement("button");
+              addBtn.className = "secondary";
+              addBtn.textContent = "+";
+              addBtn.title = "Add to playlist";
+              addBtn.onclick = (e) => {
+                e.stopPropagation();
+                const existing = wrap.querySelector(".add-to-pl-menu");
+                if (existing) {
+                  existing.remove();
+                  return;
+                }
+                document
+                  .querySelectorAll(".add-to-pl-menu")
+                  .forEach((m) => m.remove());
+                const menu = document.createElement("div");
+                menu.className = "add-to-pl-menu";
+                playlists.forEach((pl) => {
+                  const mi = document.createElement("button");
+                  mi.className = "pl-menu-item";
+                  mi.textContent = pl.name;
+                  mi.onclick = async (ev) => {
+                    ev.stopPropagation();
+                    try {
+                      await api(`/api/playlists/${pl.id}/tracks`, {
+                        method: "POST",
+                        body: JSON.stringify({
+                          id: item.id,
+                          title: item.title,
+                          uploader: item.uploader,
+                          duration: item.duration,
+                          thumbnail: item.thumbnail,
+                        }),
+                      });
+                      mi.textContent = "✓ Added";
+                      mi.disabled = true;
+                      await loadPlaylists();
+                    } catch (err) {
+                      mi.textContent = err.message;
+                    }
+                  };
+                  menu.appendChild(mi);
+                });
+                wrap.appendChild(menu);
               };
-              menu.appendChild(mi);
-            });
-            wrap.appendChild(menu);
-          };
-          wrap.appendChild(addBtn);
-          row.appendChild(wrap);
+              wrap.appendChild(addBtn);
+              row.appendChild(wrap);
+            }
+
+            resultsEl.appendChild(row);
+          });
         }
-        resultsEl.appendChild(row);
-      });
-      renderPager(total);
-    }
-    function renderPager(total) {
-      pagerEl.innerHTML = "";
-      const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-      if (pages <= 1) return;
-      const prev = document.createElement("button"); prev.className = "secondary";
-      prev.textContent = "← Prev"; prev.disabled = page === 0;
-      prev.onclick = () => { page--; renderResults(results); };
-      const next = document.createElement("button"); next.className = "secondary";
-      next.textContent = "Next →"; next.disabled = page >= pages - 1;
-      next.onclick = () => { page++; renderResults(results); };
-      const lbl = document.createElement("span"); lbl.className = "muted";
-      lbl.textContent = `Page ${page + 1} / ${pages}`;
-      pagerEl.append(prev, next, lbl);
-    }
-
-    function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
-
-    /* Close add-to-playlist menus on outside click */
-    document.addEventListener("click", () => document.querySelectorAll(".add-to-pl-menu").forEach(m => m.remove()));
-
-    /* ---- recommendations ---- */
-    let recsCache = {};
-    async function loadRecs(title, uploader) {
-      const key = `${title}|${uploader}`;
-      if (recsCache[key]) { renderRecs(recsCache[key]); return; }
-      recsLabel.textContent = "Loading…";
-      try {
-        const d = await api(`/api/related?title=${encodeURIComponent(title)}&uploader=${encodeURIComponent(uploader || "")}`);
-        const items = d.results || [];
-        recsCache[key] = items;
-        renderRecs(items);
-        recsLabel.textContent = "Similar music";
-      } catch {
-        recsLabel.textContent = "Could not load";
+        // Update results count and hide pager (infinite scroll replaces pagination)
+        document.getElementById("resultsCount").textContent = data.length
+          ? `${data.length} result${data.length > 1 ? "s" : ""}`
+          : "";
+        pagerEl.style.display = 'none';
       }
-    }
-    function renderRecs(items) {
-      recsEl.innerHTML = "";
-      if (!items.length) { recsEl.innerHTML = '<div class="muted" style="font-size:11px;">No recommendations.</div>'; return; }
-      items.slice(0, 8).forEach((item) => {
-        const row = document.createElement("div");
-        row.className = "rec-item";
-        row.innerHTML = `
+
+      function renderPager(total) {
+        pagerEl.innerHTML = "";
+        if (total <= PAGE_SIZE) return;
+        const pages = Math.ceil(total / PAGE_SIZE);
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "◄";
+        prevBtn.disabled = page === 0;
+        prevBtn.onclick = () => {
+          page--;
+          renderResults(results);
+        };
+        pagerEl.appendChild(prevBtn);
+        for (let i = 0; i < pages; i++) {
+          const btn = document.createElement("button");
+          btn.textContent = i + 1;
+          btn.className = i === page ? "" : "secondary";
+          btn.onclick = () => {
+            page = i;
+            renderResults(results);
+          };
+          pagerEl.appendChild(btn);
+        }
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "►";
+        nextBtn.disabled = page === pages - 1;
+        nextBtn.onclick = () => {
+          page++;
+          renderResults(results);
+        };
+        pagerEl.appendChild(nextBtn);
+      }
+
+      /* ==== History ==== */
+      async function loadHistory() {
+        try {
+          const d = await api("/api/history");
+          const h = d.history || [];
+          historyListEl.innerHTML = "";
+          if (!h.length) {
+            historyListEl.innerHTML =
+              '<div class="muted" style="font-size:11px;">No history.</div>';
+            return;
+          }
+          h.forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "history-item";
+            row.innerHTML = `
+            <div class="hi-title">${esc(item.title)}</div>
+            <div class="hi-sub">${esc(item.uploader || "")}</div>`;
+            const btn = document.createElement("button");
+            btn.textContent = "▶";
+            btn.onclick = () => {
+              plQueueActive = false;
+              handlePlay(item.id || item.title, item.id);
+            };
+            row.appendChild(btn);
+            historyListEl.appendChild(row);
+          });
+        } catch (err) {
+          historyListEl.innerHTML = `<span class="error">${err.message}</span>`;
+        }
+      }
+
+      /* ==== Recommendations ==== */
+      async function loadRecs(title, uploader) {
+        try {
+          // Request more songs for infinite scroll (50 instead of 8)
+          const d = await api(
+            `/api/related?title=${encodeURIComponent(title)}&uploader=${encodeURIComponent(uploader || "")}&limit=50`,
+          );
+          allRecs = d.results || [];
+          displayedRecsCount = 0;
+          renderRecs(true); // true = initial load, clears container
+        } catch (err) {
+          allRecs = [];
+          displayedRecsCount = 0;
+          renderRecs(true);
+        }
+      }
+
+      function renderRecs(clearFirst = false) {
+        if (clearFirst) {
+          recsEl.innerHTML = "";
+          displayedRecsCount = 0;
+        }
+
+        if (allRecs.length === 0 && clearFirst) {
+          recsEl.innerHTML =
+            '<div class="muted" style="font-size:11px;">No recommendations.</div>';
+          return;
+        }
+
+        // Calculate how many to display
+        const endIndex = Math.min(
+          displayedRecsCount + RECS_PER_PAGE,
+          allRecs.length,
+        );
+        const itemsToRender = allRecs.slice(displayedRecsCount, endIndex);
+
+        itemsToRender.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "rec-item";
+          row.innerHTML = `
           <img src="${item.thumbnail || ""}" alt="">
           <div style="flex:1; min-width:0;">
             <div class="rec-title">${esc(item.title || "Untitled")}</div>
             <div class="rec-tag">${esc(item.uploader || "")}</div>
           </div>`;
-        const btn = document.createElement("button");
-        btn.className = "icon";
-        btn.style.padding = "4px 7px"; btn.style.fontSize = "10px";
-        const isCur = playingId === item.id;
-        btn.textContent = "▶";
-        btn.disabled = !!playPendingId || isCur;
-        if (isCur) btn.style.opacity = "0.4";
-        btn.onclick = () => { plQueueActive = false; handlePlay(item.id || item.webpageUrl || item.title, item.id); };
-        row.appendChild(btn);
-        recsEl.appendChild(row);
-      });
-    }
+          const btn = document.createElement("button");
+          btn.className = "icon";
+          btn.style.padding = "4px 7px";
+          btn.style.fontSize = "10px";
+          const isCur = playingId === item.id;
+          btn.textContent = "▶";
+          btn.disabled = !!playPendingId || isCur;
+          if (isCur) btn.style.opacity = "0.4";
+          btn.onclick = () => {
+            // Don't clear queues - song will be added automatically
+            handlePlay(item.id || item.webpageUrl || item.title, item.id);
+          };
+          row.appendChild(btn);
 
-    /* ---- search ---- */
-    async function doSearch() {
-      searchErrorEl.textContent = "";
-      const q = document.getElementById("searchInput").value.trim();
-      if (!q) return;
-      searchingOvl.style.display = "flex";
-      try {
-        const d = await api(`/api/search?q=${encodeURIComponent(q)}&limit=15`);
-        results = d.results || [];
-        page = 0;
-        renderResults(results);
-      } catch (err) { searchErrorEl.textContent = err.message; }
-      finally { searchingOvl.style.display = "none"; }
-    }
+          // Add to Queue button
+          const queueBtn = document.createElement("button");
+          queueBtn.className = "secondary";
+          queueBtn.textContent = "+Q";
+          queueBtn.title = "Add to queue";
+          queueBtn.style.padding = "4px 6px";
+          queueBtn.style.fontSize = "10px";
+          queueBtn.onclick = () => {
+            addToGeneralQueue(item);
+            queueBtn.textContent = "✓";
+            queueBtn.disabled = true;
+            setTimeout(() => {
+              queueBtn.textContent = "+Q";
+              queueBtn.disabled = false;
+            }, 1500);
+          };
+          row.appendChild(queueBtn);
 
-    /* ---- play ---- */
-    async function handlePlay(target, id) {
-      if (playPendingId) return;
-      controlErrorEl.textContent = "";
-      playPendingId = id || target;
-      playerLoading.style.display = "flex";
-      renderResults(results);
-      showPlayer();
-      heroTitle.textContent = "Loading…";
-      heroUploader.textContent = "";
-      playerStatus.textContent = "LOADING";
-      try {
-        await api("/api/play", { method: "POST", body: JSON.stringify({ id: target }) });
-        playingId = id || target;
-        await refreshStatus();
-        if (currentTitle) loadRecs(currentTitle, currentUploader);
-      } catch (err) { controlErrorEl.textContent = err.message; }
-      finally {
-        playPendingId = null;
-        playerLoading.style.display = "none";
-        renderResults(results);
-        renderQueuePanel();
-        loadHistory();
-      }
-    }
+          // Add-to-playlist button
+          if (playlists.length > 0) {
+            const wrap = document.createElement("div");
+            wrap.className = "add-to-pl-wrap";
+            const addBtn = document.createElement("button");
+            addBtn.className = "secondary";
+            addBtn.textContent = "+";
+            addBtn.title = "Add to playlist";
+            addBtn.onclick = (e) => {
+              e.stopPropagation();
+              const existing = wrap.querySelector(".add-to-pl-menu");
+              if (existing) {
+                existing.remove();
+                return;
+              }
+              document
+                .querySelectorAll(".add-to-pl-menu")
+                .forEach((m) => m.remove());
+              const menu = document.createElement("div");
+              menu.className = "add-to-pl-menu";
+              playlists.forEach((pl) => {
+                const mi = document.createElement("button");
+                mi.className = "pl-menu-item";
+                mi.textContent = pl.name;
+                mi.onclick = async (ev) => {
+                  ev.stopPropagation();
+                  try {
+                    await api(`/api/playlists/${pl.id}/tracks`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        id: item.id,
+                        title: item.title,
+                        uploader: item.uploader,
+                        duration: item.duration,
+                        thumbnail: item.thumbnail,
+                      }),
+                    });
+                    mi.textContent = "✓ Added";
+                    mi.disabled = true;
+                    await loadPlaylists();
+                  } catch (err) {
+                    mi.textContent = err.message;
+                  }
+                };
+                menu.appendChild(mi);
+              });
+              wrap.appendChild(menu);
+            };
+            wrap.appendChild(addBtn);
+            row.appendChild(wrap);
+          }
 
-    /* ---- controls ---- */
-    async function postCtrl(path, body) {
-      controlErrorEl.textContent = "";
-      try {
-        await api(path, { method: "POST", body: body ? JSON.stringify(body) : undefined });
-        await refreshStatus();
-      } catch (err) { controlErrorEl.textContent = err.message; }
-    }
+          recsEl.appendChild(row);
+        });
 
-    /* ---- status polling ---- */
-    async function refreshStatus() {
-      try {
-        const d = await api("/api/status");
-        const s = d.result || {};
-        const st = s.status || "idle";
-        const prevStatus = lastStatus;
-        lastStatus = st;
-        playerStatus.textContent = st.toUpperCase();
-        heroTitle.textContent = s.meta?.title || "Nothing playing";
-        heroUploader.textContent = s.meta?.uploader || "";
-        currentTitle = s.meta?.title || "";
-        currentUploader = s.meta?.uploader || "";
-        lastDuration = s.durationSeconds || s.meta?.durationSeconds || 0;
-        lastPosition = s.position ?? 0;
-        lastUpdateTs = Date.now();
-        updateProgress(lastPosition, lastDuration);
-        if (s.meta?.id) playingId = s.meta.id;
+        displayedRecsCount = endIndex;
 
-        // Auto-advance playlist queue when song ends
-        if (plQueueActive && prevStatus === "playing" && st === "idle" && !playPendingId) {
-          advanceQueue();
+        // Show "loading more" indicator if there are more items
+        if (displayedRecsCount < allRecs.length) {
+          const loadingEl = document.createElement("div");
+          loadingEl.id = "recsLoadingMore";
+          loadingEl.className = "muted";
+          loadingEl.style.textAlign = "center";
+          loadingEl.style.padding = "10px";
+          loadingEl.style.fontSize = "11px";
+          loadingEl.textContent = `Showing ${displayedRecsCount} of ${allRecs.length} • Scroll for more`;
+          recsEl.appendChild(loadingEl);
         }
-      } catch { playerStatus.textContent = "ERROR"; }
-    }
-
-    function updateProgress(pos, dur) {
-      if (!dur) {
-        progressEl.max = 0; progressEl.value = 0; progressEl.disabled = true;
-        curTimeEl.textContent = fmt(pos); totalTimeEl.textContent = "—";
-        return;
       }
-      progressEl.disabled = false;
-      progressEl.max = Math.floor(dur);
-      if (!isSeeking) progressEl.value = Math.floor(Math.min(pos, dur));
-      curTimeEl.textContent = fmt(pos);
-      totalTimeEl.textContent = fmt(dur);
-    }
 
-    /* ---- animation tick (60fps progress, 10fps viz) ---- */
-    let lastVizTs = 0;
-    function tick() {
-      const now = Date.now();
-      const elapsed = (now - lastUpdateTs) / 1000;
-      let proj = lastPosition;
-      if (lastStatus === "playing" && !isSeeking) proj = lastPosition + elapsed;
-      updateProgress(proj, lastDuration);
-      if (now - lastVizTs > 100) { animateViz(lastStatus === "playing"); lastVizTs = now; }
-      requestAnimationFrame(tick);
-    }
+      // Setup infinite scroll for recommendations
+      recsEl.addEventListener("scroll", () => {
+        if (isLoadingMoreRecs) return;
 
-    /* ---- view toggling ---- */
-    function showPlayer() { searchView.classList.add("hidden"); playerView.classList.remove("hidden"); }
-    function showSearch() { playerView.classList.add("hidden"); searchView.classList.remove("hidden"); }
+        const scrollTop = recsEl.scrollTop;
+        const scrollHeight = recsEl.scrollHeight;
+        const clientHeight = recsEl.clientHeight;
 
-    /* ==== PLAYLIST MANAGEMENT ==== */
-    async function loadPlaylists() {
-      try {
-        const d = await api("/api/playlists");
-        playlists = d.playlists || [];
-        renderPlaylists();
-      } catch { /* ignore */ }
-    }
+        // Check if scrolled near bottom (within 50px)
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+          if (displayedRecsCount < allRecs.length) {
+            isLoadingMoreRecs = true;
 
-    function renderPlaylists() {
-      playlistListEl.innerHTML = "";
-      if (!playlists.length) {
-        playlistListEl.innerHTML = '<div class="muted" style="font-size:12px;">No playlists yet. Create one above!</div>';
-        return;
-      }
-      playlists.forEach((pl) => {
-        const card = document.createElement("div");
-        card.className = "playlist-card";
-        card.dataset.id = pl.id;
+            // Remove "loading more" indicator
+            const loadingEl = document.getElementById("recsLoadingMore");
+            if (loadingEl) loadingEl.remove();
 
-        const header = document.createElement("div");
-        header.className = "playlist-card-header";
+            // Add loading spinner
+            const spinner = document.createElement("div");
+            spinner.id = "recsSpinner";
+            spinner.style.textAlign = "center";
+            spinner.style.padding = "10px";
+            spinner.innerHTML =
+              '<span class="spinner"></span> <span style="font-size:11px;color:var(--muted);">Loading more...</span>';
+            recsEl.appendChild(spinner);
 
-        const nameBtn = document.createElement("button");
-        nameBtn.className = "pl-name";
-        nameBtn.textContent = pl.name;
-        nameBtn.title = "Click to expand, double-click to rename";
-        nameBtn.onclick = () => togglePlaylistExpand(pl.id);
-        nameBtn.ondblclick = () => startRenamePl(pl.id, nameBtn);
-
-        const count = document.createElement("span");
-        count.className = "pl-count";
-        count.textContent = `${pl.trackCount} track${pl.trackCount !== 1 ? "s" : ""}`;
-
-        const playBtn = document.createElement("button");
-        playBtn.textContent = "▶ Play";
-        playBtn.title = "Play all (sequential)";
-        playBtn.onclick = (e) => { e.stopPropagation(); startPlaylistQueue(pl.id, "sequential"); };
-
-        const shuffleBtn = document.createElement("button");
-        shuffleBtn.className = "secondary";
-        shuffleBtn.textContent = "🔀";
-        shuffleBtn.title = "Shuffle play";
-        shuffleBtn.onclick = (e) => { e.stopPropagation(); startPlaylistQueue(pl.id, "shuffle"); };
-
-        const loopBtn = document.createElement("button");
-        loopBtn.className = "secondary";
-        loopBtn.textContent = "🔁";
-        loopBtn.title = "Loop play";
-        loopBtn.onclick = (e) => { e.stopPropagation(); startPlaylistQueue(pl.id, "loop"); };
-
-        const delBtn = document.createElement("button");
-        delBtn.className = "secondary";
-        delBtn.textContent = "✕";
-        delBtn.title = "Delete playlist";
-        delBtn.onclick = async (e) => {
-          e.stopPropagation();
-          if (!confirm(`Delete "${pl.name}"?`)) return;
-          try { await api(`/api/playlists/${pl.id}`, { method: "DELETE" }); await loadPlaylists(); }
-          catch (err) { alert(err.message); }
-        };
-
-        header.append(nameBtn, count, playBtn, shuffleBtn, loopBtn, delBtn);
-        card.appendChild(header);
-
-        // Expanded track list
-        if (expandedPl === pl.id) {
-          const tracksDiv = document.createElement("div");
-          tracksDiv.className = "playlist-tracks";
-          tracksDiv.innerHTML = '<div class="muted" style="font-size:11px;">Loading tracks…</div>';
-          card.appendChild(tracksDiv);
-          loadPlaylistTracks(pl.id, tracksDiv);
+            // Simulate brief delay for smooth UX
+            setTimeout(() => {
+              const spinnerEl = document.getElementById("recsSpinner");
+              if (spinnerEl) spinnerEl.remove();
+              renderRecs(false); // false = append, don't clear
+              isLoadingMoreRecs = false;
+            }, 300);
+          }
         }
-        playlistListEl.appendChild(card);
       });
-    }
 
-    function togglePlaylistExpand(id) {
-      expandedPl = expandedPl === id ? null : id;
-      renderPlaylists();
-    }
+      // Infinite scroll for search results (window-based)
+      let resultsLoadingMore = false;
+      function canLoadMoreResults() {
+        const maxResults = Math.min(results.length, 30);
+        const pages = Math.ceil(maxResults / PAGE_SIZE);
+        return page < pages - 1;
+      }
+      async function loadNextResults() {
+        if (resultsLoadingMore) return;
+        if (!canLoadMoreResults()) return;
+        resultsLoadingMore = true;
+        page++;
+        await new Promise((r) => setTimeout(r, 120));
+        renderResults(results);
+        resultsLoadingMore = false;
+      }
 
-    async function loadPlaylistTracks(id, container) {
-      try {
-        const d = await api(`/api/playlists/${id}`);
-        const tracks = d.playlist?.tracks || [];
-        container.innerHTML = "";
-        if (!tracks.length) {
-          container.innerHTML = '<div class="muted" style="font-size:11px;">No tracks. Search and add songs!</div>';
+      // Trigger when results element is near the viewport bottom
+      window.addEventListener('scroll', () => {
+        if (!canLoadMoreResults()) return;
+        try {
+          const rect = resultsEl.getBoundingClientRect();
+          if (rect.bottom <= window.innerHeight + 80) {
+            loadNextResults();
+          }
+        } catch (err) {
+          // ignore
+        }
+      });
+
+      /* ---- search ---- */
+      async function doSearch() {
+        searchErrorEl.textContent = "";
+        const q = document.getElementById("searchInput").value.trim();
+        if (!q) return;
+        searchingOvl.style.display = "flex";
+        try {
+          // request up to 30 results for client-side infinite scroll
+          const d = await api(
+            `/api/search?q=${encodeURIComponent(q)}&limit=30`,
+          );
+          results = d.results || [];
+          page = 0;
+          renderResults(results);
+          // If results container is not scrollable yet, auto-load next pages
+          setTimeout(async () => {
+            try {
+              while (resultsEl.scrollHeight <= resultsEl.clientHeight && canLoadMoreResults()) {
+                await loadNextResults();
+                await new Promise((r) => setTimeout(r, 60));
+              }
+            } catch (err) {
+              // ignore
+            }
+          }, 80);
+        } catch (err) {
+          searchErrorEl.textContent = err.message;
+        } finally {
+          searchingOvl.style.display = "none";
+        }
+      }
+
+      /* ---- play ---- */
+      async function handlePlay(target, id) {
+        controlErrorEl.textContent = "";
+
+        // Open the player view immediately so user sees playback UI
+        showPlayer();
+        playerLoading.style.display = "flex";
+        playPendingId = id || target;
+
+        try {
+          // If playing a search result or recommendation...
+          const response = await api("/api/play", {
+            method: "POST",
+            body: JSON.stringify({ id: target }),
+          });
+          const songMeta = response.result?.meta;
+
+          if (songMeta) {
+            // If song isn't in the queue, push it to the end
+            const alreadyIdx = generalQueue.findIndex((t) => t.id === songMeta.id);
+            if (alreadyIdx === -1) {
+              generalQueue.push({
+                id: songMeta.id,
+                title: songMeta.title,
+                uploader: songMeta.uploader || "",
+                duration: songMeta.duration,
+                thumbnail: songMeta.thumbnail,
+              });
+              // Move index to the newly added song
+              generalQueueIndex = generalQueue.length - 1;
+            } else {
+              generalQueueIndex = alreadyIdx;
+            }
+          }
+
+          generalQueueActive = true;
+          renderQueuePanel();
+          await refreshStatus();
+          if (currentTitle) loadRecs(currentTitle, currentUploader);
+        } catch (err) {
+          controlErrorEl.textContent = err.message;
+        } finally {
+          playPendingId = null;
+          playerLoading.style.display = "none";
+          renderResults(results);
+          loadHistory();
+        }
+      }
+      /* ---- controls ---- */
+      async function postCtrl(path, body) {
+        controlErrorEl.textContent = "";
+        try {
+          await api(path, {
+            method: "POST",
+            body: body ? JSON.stringify(body) : undefined,
+          });
+          await refreshStatus();
+        } catch (err) {
+          controlErrorEl.textContent = err.message;
+        }
+      }
+
+      /* ---- status polling ---- */
+      async function refreshStatus() {
+        try {
+          const d = await api("/api/status");
+          const s = d.result || {};
+          const st = s.status || "idle";
+          const prevStatus = lastStatus;
+          lastStatus = st;
+          playerStatus.textContent = st.toUpperCase();
+          heroTitle.textContent = s.meta?.title || "Nothing playing";
+          heroUploader.textContent = s.meta?.uploader || "";
+          currentTitle = s.meta?.title || "";
+          currentUploader = s.meta?.uploader || "";
+          lastDuration = s.durationSeconds || s.meta?.durationSeconds || 0;
+          lastPosition = s.position ?? 0;
+          lastUpdateTs = Date.now();
+          updateProgress(lastPosition, lastDuration);
+          if (s.meta?.id) playingId = s.meta.id;
+          if (s.meta?.thumbnail) window.lastMetaThumb = s.meta.thumbnail;
+
+          // Auto-advance general queue when song ends
+          if (
+            generalQueueActive &&
+            prevStatus === "playing" &&
+            st === "idle" &&
+            !playPendingId
+          ) {
+            advanceGeneralQueue();
+          }
+          // Auto-advance playlist queue when song ends
+          else if (
+            plQueueActive &&
+            prevStatus === "playing" &&
+            st === "idle" &&
+            !playPendingId
+          ) {
+            advanceQueue();
+          }
+
+          // Update mini player bar if in search view
+          if (!playerView.classList.contains("hidden")) {
+            document.getElementById("miniPlayerBar").style.display = "none";
+          } else {
+            updateMiniPlayerBar();
+          }
+        } catch (err) {
+          playerStatus.textContent = "ERROR";
+        }
+      }
+
+      // Wait until the backend reports the player is idle (or timeout)
+      async function waitForStop(timeout = 3000, interval = 100) {
+        const start = Date.now();
+        while (Date.now() - start < timeout) {
+          try {
+            const d = await api('/api/status');
+            const st = d.result?.status || 'idle';
+            if (st === 'idle') return true;
+          } catch (err) {
+            // ignore and retry
+          }
+          await new Promise((r) => setTimeout(r, interval));
+        }
+        return false;
+      }
+
+      function updateProgress(pos, dur) {
+        if (!dur) {
+          progressEl.max = 0;
+          progressEl.value = 0;
+          progressEl.disabled = true;
+          curTimeEl.textContent = fmt(pos);
+          totalTimeEl.textContent = "—";
           return;
         }
-        tracks.forEach((t, i) => {
-          const row = document.createElement("div");
-          row.className = "playlist-track";
-          row.innerHTML = `
+        progressEl.disabled = false;
+        progressEl.max = Math.floor(dur);
+        if (!isSeeking) progressEl.value = Math.floor(Math.min(pos, dur));
+        curTimeEl.textContent = fmt(pos);
+        totalTimeEl.textContent = fmt(dur);
+      }
+
+      /* ---- animation tick (60fps progress, 10fps viz) ---- */
+      let lastVizTs = 0;
+      function tick() {
+        const now = Date.now();
+        const elapsed = (now - lastUpdateTs) / 1000;
+        let proj = lastPosition;
+        if (lastStatus === "playing" && !isSeeking)
+          proj = lastPosition + elapsed;
+        updateProgress(proj, lastDuration);
+        if (now - lastVizTs > 100) {
+          animateViz(lastStatus === "playing");
+          lastVizTs = now;
+        }
+        requestAnimationFrame(tick);
+      }
+
+      /* ---- view toggling ---- */
+      function showPlayer() {
+        searchView.classList.add("hidden");
+        playerView.classList.remove("hidden");
+      }
+      function showSearch() {
+        playerView.classList.add("hidden");
+        searchView.classList.remove("hidden");
+      }
+
+      /* ==== PLAYLIST MANAGEMENT ==== */
+      async function loadPlaylists() {
+        try {
+          const d = await api("/api/playlists");
+          playlists = d.playlists || [];
+          renderPlaylists();
+        } catch (err) {
+          playlistListEl.innerHTML = `<span class="error">${err.message}</span>`;
+        }
+      }
+
+      function renderPlaylists() {
+        playlistListEl.innerHTML = "";
+        if (!playlists.length) {
+          playlistListEl.innerHTML =
+            '<div class="muted" style="font-size:11px;">No playlists. Create one above!</div>';
+          return;
+        }
+        playlists.forEach((pl) => {
+          const card = document.createElement("div");
+          card.className = "playlist-card";
+          const header = document.createElement("div");
+          header.className = "playlist-card-header";
+
+          const nameBtn = document.createElement("button");
+          nameBtn.className = "pl-name";
+          nameBtn.textContent = pl.name;
+          nameBtn.title = "Click to expand, double-click to rename";
+          nameBtn.onclick = () => togglePlaylistExpand(pl.id);
+          nameBtn.ondblclick = () => startRenamePl(pl.id, nameBtn);
+
+          const count = document.createElement("span");
+          count.className = "pl-count";
+          count.textContent = `${pl.trackCount} track${pl.trackCount !== 1 ? "s" : ""}`;
+
+          const playBtn = document.createElement("button");
+          playBtn.textContent = "▶ Play";
+          playBtn.title = "Play all (sequential)";
+          playBtn.onclick = (e) => {
+            e.stopPropagation();
+            startPlaylistQueue(pl.id, "sequential");
+          };
+
+          const shuffleBtn = document.createElement("button");
+          shuffleBtn.className = "secondary";
+          shuffleBtn.textContent = "🔀";
+          shuffleBtn.title = "Shuffle play";
+          shuffleBtn.onclick = (e) => {
+            e.stopPropagation();
+            startPlaylistQueue(pl.id, "shuffle");
+          };
+
+          const loopBtn = document.createElement("button");
+          loopBtn.className = "secondary";
+          loopBtn.textContent = "🔁";
+          loopBtn.title = "Loop play";
+          loopBtn.onclick = (e) => {
+            e.stopPropagation();
+            startPlaylistQueue(pl.id, "loop");
+          };
+
+          const delBtn = document.createElement("button");
+          delBtn.className = "secondary";
+          delBtn.textContent = "✕";
+          delBtn.title = "Delete playlist";
+          delBtn.onclick = async (e) => {
+            e.stopPropagation();
+            if (!confirm(`Delete "${pl.name}"?`)) return;
+            try {
+              await api(`/api/playlists/${pl.id}`, { method: "DELETE" });
+              await loadPlaylists();
+            } catch (err) {
+              alert(err.message);
+            }
+          };
+
+          header.append(nameBtn, count, playBtn, shuffleBtn, loopBtn, delBtn);
+          card.appendChild(header);
+
+          // Expanded track list
+          if (expandedPl === pl.id) {
+            const tracksDiv = document.createElement("div");
+            tracksDiv.className = "playlist-tracks";
+            tracksDiv.innerHTML =
+              '<div class="muted" style="font-size:11px;">Loading tracks…</div>';
+            card.appendChild(tracksDiv);
+            loadPlaylistTracks(pl.id, tracksDiv);
+          }
+          playlistListEl.appendChild(card);
+        });
+      }
+
+      function togglePlaylistExpand(id) {
+        expandedPl = expandedPl === id ? null : id;
+        renderPlaylists();
+      }
+
+      async function loadPlaylistTracks(id, container) {
+        try {
+          const d = await api(`/api/playlists/${id}`);
+          const tracks = d.playlist?.tracks || [];
+          container.innerHTML = "";
+          if (!tracks.length) {
+            container.innerHTML =
+              '<div class="muted" style="font-size:11px;">No tracks. Search and add songs!</div>';
+            return;
+          }
+          tracks.forEach((t, i) => {
+            const row = document.createElement("div");
+            row.className = "playlist-track";
+            row.innerHTML = `
             <span class="pt-num">${i + 1}</span>
             <span class="pt-title" title="${esc(t.title)}">${esc(t.title)}</span>
             <span class="pt-uploader">${esc(t.uploader || "")}</span>`;
-          const playBtn = document.createElement("button");
-          playBtn.textContent = "▶";
-          playBtn.onclick = () => { plQueueActive = false; handlePlay(t.id, t.id); };
-          const rmBtn = document.createElement("button");
-          rmBtn.className = "secondary";
-          rmBtn.textContent = "✕";
-          rmBtn.onclick = async () => {
-            try { await api(`/api/playlists/${id}/tracks/${t.id}`, { method: "DELETE" }); await loadPlaylists(); }
-            catch (err) { alert(err.message); }
-          };
-          row.append(playBtn, rmBtn);
-          container.appendChild(row);
-        });
-      } catch (err) {
-        container.innerHTML = `<div class="error">${err.message}</div>`;
-      }
-    }
-
-    function startRenamePl(id, btnEl) {
-      const current = btnEl.textContent;
-      const input = document.createElement("input");
-      input.type = "text";
-      input.className = "pl-rename-input";
-      input.value = current;
-      btnEl.replaceWith(input);
-      input.focus();
-      input.select();
-      const finish = async () => {
-        const newName = input.value.trim();
-        if (newName && newName !== current) {
-          try { await api(`/api/playlists/${id}`, { method: "PATCH", body: JSON.stringify({ name: newName }) }); }
-          catch { /* ignore */ }
+            const playBtn = document.createElement("button");
+            playBtn.textContent = "▶";
+            playBtn.onclick = () => {
+              plQueueActive = false;
+              handlePlay(t.id, t.id);
+            };
+            const rmBtn = document.createElement("button");
+            rmBtn.className = "secondary";
+            rmBtn.textContent = "✕";
+            rmBtn.onclick = async () => {
+              try {
+                await api(`/api/playlists/${id}/tracks/${t.id}`, {
+                  method: "DELETE",
+                });
+                await loadPlaylists();
+              } catch (err) {
+                alert(err.message);
+              }
+            };
+            row.append(playBtn, rmBtn);
+            container.appendChild(row);
+          });
+        } catch (err) {
+          container.innerHTML = `<span class="error">${err.message}</span>`;
         }
-        await loadPlaylists();
+      }
+
+      async function startRenamePl(id, nameBtn) {
+        const pl = playlists.find((p) => p.id === id);
+        if (!pl) return;
+        const input = document.createElement("input");
+        input.className = "pl-rename-input";
+        input.value = pl.name;
+        input.onblur = async () => {
+          const newName = input.value.trim();
+          if (newName && newName !== pl.name) {
+            try {
+              await api(`/api/playlists/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ name: newName }),
+              });
+              await loadPlaylists();
+            } catch (err) {
+              alert(err.message);
+            }
+          } else {
+            renderPlaylists();
+          }
+        };
+        input.onkeydown = (e) => {
+          if (e.key === "Enter") input.blur();
+        };
+        nameBtn.replaceWith(input);
+        input.focus();
+        input.select();
+      }
+
+      document.getElementById("createPlBtn").onclick = async () => {
+        const name = document.getElementById("newPlName").value.trim();
+        if (!name) return;
+        try {
+          await api("/api/playlists", {
+            method: "POST",
+            body: JSON.stringify({ name }),
+          });
+          document.getElementById("newPlName").value = "";
+          await loadPlaylists();
+        } catch (err) {
+          alert(err.message);
+        }
       };
-      input.onblur = finish;
-      input.onkeydown = (e) => { if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = current; input.blur(); } };
-    }
 
-    document.getElementById("createPlBtn").onclick = async () => {
-      const nameInput = document.getElementById("newPlName");
-      const name = nameInput.value.trim();
-      if (!name) return;
-      try {
-        await api("/api/playlists", { method: "POST", body: JSON.stringify({ name }) });
-        nameInput.value = "";
-        await loadPlaylists();
-      } catch (err) { alert(err.message); }
-    };
-    document.getElementById("newPlName").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") document.getElementById("createPlBtn").click();
-    });
-
-    /* ==== PLAYLIST QUEUE PLAYBACK ==== */
-    async function startPlaylistQueue(plId, mode) {
-      try {
-        const d = await api(`/api/playlists/${plId}`);
+      /* ==== Playlist Queue Playback ==== */
+      /* ==== Playlist Queue Playback ==== */
+      /* ==== Playlist Queue Playback ==== */
+      async function startPlaylistQueue(id, mode) {
+        const d = await api(`/api/playlists/${id}`);
         const tracks = d.playlist?.tracks || [];
-        if (!tracks.length) { alert("Playlist is empty"); return; }
-        plQueue = [...tracks];
-        plQueueMode = mode;
-        if (mode === "shuffle") shuffleArray(plQueue);
-        plQueueIndex = 0;
-        plQueueActive = true;
+        if (!tracks.length) {
+          alert("Playlist is empty!");
+          return;
+        }
+
+        // 1. Clear and populate the general queue with the whole playlist
+        generalQueue = tracks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          uploader: t.uploader || "",
+          duration: t.duration,
+          thumbnail: t.thumbnail,
+        }));
+
+        // 2. Handle Shuffle mode
+        if (mode === "shuffle") shuffleArray(generalQueue);
+
+        // 3. Reset state to start at the beginning of the new queue
+        generalQueueActive = true;
+        generalQueueIndex = 0;
+        plQueueActive = false; // We use generalQueue for better flexibility
+
         renderQueuePanel();
         showPlayer();
-        await handlePlay(plQueue[0].id, plQueue[0].id);
-      } catch (err) { alert(err.message); }
-    }
 
-    function advanceQueue() {
-      if (!plQueueActive || !plQueue.length) return;
-      plQueueIndex++;
-      if (plQueueIndex >= plQueue.length) {
+        // 4. Play the first song in the newly populated queue
+        const firstTrack = generalQueue[0];
+        // Note: We call internalPlay to avoid the "auto-add-to-queue" logic in handlePlay
+        internalPlay(firstTrack.id, firstTrack.id);
+      }
+      async function advanceQueue() {
+        if (!plQueueActive || !plQueueTracks.length) return;
         if (plQueueMode === "loop") {
-          plQueueIndex = 0;
+          plQueueIndex = (plQueueIndex + 1) % plQueueTracks.length;
         } else {
-          plQueueActive = false;
+          plQueueIndex++;
+          if (plQueueIndex >= plQueueTracks.length) {
+            plQueueActive = false;
+            renderQueuePanel();
+            return;
+          }
+        }
+        renderQueuePanel();
+        const next = plQueueTracks[plQueueIndex];
+        handlePlay(next.id, next.id);
+      }
+
+      function renderQueuePanel() {
+        queuePanelEl.innerHTML = "";
+
+        // Show general queue if it has items (doesn't need to be active)
+        if (generalQueue.length > 0) {
+          const header = document.createElement("div");
+          header.className = "pl-playback-bar";
+          header.innerHTML = `<span class="badge">Playing</span><span style="font-size:11px;color:var(--muted);">${generalQueue.length} track${generalQueue.length !== 1 ? "s" : ""}</span>`;
+
+          const clearBtn = document.createElement("button");
+          clearBtn.className = "secondary pl-mode-btn";
+          clearBtn.textContent = "Clear";
+          clearBtn.onclick = () => {
+            generalQueue = [];
+            generalQueueActive = false;
+            generalQueueIndex = 0;
+            renderQueuePanel();
+          };
+          header.appendChild(clearBtn);
+          queuePanelEl.appendChild(header);
+
+          generalQueue.forEach((t, i) => {
+            const row = document.createElement("div");
+            row.className = "nq-item";
+            if (i === generalQueueIndex && generalQueueActive)
+              row.classList.add("active");
+
+            const title = document.createElement("span");
+            title.textContent = `${i + 1}. ${t.title}`;
+            title.style.flex = "1";
+            title.style.minWidth = "0";
+            title.style.overflow = "hidden";
+            title.style.textOverflow = "ellipsis";
+            row.appendChild(title);
+
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "secondary";
+            removeBtn.textContent = "✕";
+            removeBtn.style.padding = "2px 6px";
+            removeBtn.style.fontSize = "10px";
+            removeBtn.onclick = (e) => {
+              e.stopPropagation();
+              removeFromGeneralQueue(i);
+            };
+            row.appendChild(removeBtn);
+
+            queuePanelEl.appendChild(row);
+          });
+          return;
+        }
+
+        // Show playlist queue if active
+        if (plQueueActive && plQueueTracks.length) {
+          const pl = playlists.find((p) => p.id === plQueueId);
+          const header = document.createElement("div");
+          header.className = "pl-playback-bar";
+          header.innerHTML = `<span class="badge">${plQueueMode}</span><span style="font-size:11px;color:var(--muted);">${pl?.name || "Playlist"}</span>`;
+          const stopBtn = document.createElement("button");
+          stopBtn.className = "secondary pl-mode-btn";
+          stopBtn.textContent = "Stop Queue";
+          stopBtn.onclick = () => {
+            plQueueActive = false;
+            renderQueuePanel();
+          };
+          header.appendChild(stopBtn);
+          queuePanelEl.appendChild(header);
+          plQueueTracks.forEach((t, i) => {
+            const row = document.createElement("div");
+            row.className = "nq-item";
+            if (i === plQueueIndex) row.classList.add("active");
+            row.textContent = `${i + 1}. ${t.title}`;
+            queuePanelEl.appendChild(row);
+          });
+          return;
+        }
+
+        // No active queue
+        queuePanelEl.innerHTML =
+          '<div class="muted" style="font-size:11px;">No active queue. Click "+ Queue" on songs to add them.</div>';
+      }
+
+      /* ==== General Queue Management ==== */
+      function addToGeneralQueue(item) {
+        // Don't add duplicates
+        if (generalQueue.some((t) => t.id === item.id)) {
+          return;
+        }
+
+        generalQueue.push({
+          id: item.id,
+          title: item.title,
+          uploader: item.uploader || "",
+          duration: item.duration,
+          thumbnail: item.thumbnail,
+        });
+
+        // Just update the display
+        renderQueuePanel();
+      }
+
+      function removeFromGeneralQueue(index) {
+        generalQueue.splice(index, 1);
+
+        // Adjust current index if needed
+        if (
+          generalQueueActive &&
+          generalQueueIndex >= index &&
+          generalQueueIndex > 0
+        ) {
+          generalQueueIndex--;
+        }
+
+        // If queue is empty, deactivate
+        if (generalQueue.length === 0) {
+          generalQueueActive = false;
+          generalQueueIndex = 0;
+        }
+
+        renderQueuePanel();
+      }
+
+      function startGeneralQueue() {
+        if (!generalQueue.length) return;
+        generalQueueActive = true;
+        generalQueueIndex = 0;
+        plQueueActive = false; // Disable playlist queue
+        renderQueuePanel();
+        showPlayer();
+        handlePlay(generalQueue[0].id, generalQueue[0].id);
+      }
+      async function internalPlay(target, id) {
+        controlErrorEl.textContent = "";
+        playPendingId = id || target;
+        playerLoading.style.display = "flex";
+        heroTitle.textContent = "Loading…";
+        playerStatus.textContent = "LOADING";
+
+        try {
+          await api("/api/play", {
+            method: "POST",
+            body: JSON.stringify({ id: target }),
+          });
+          playingId = id || target;
+          await refreshStatus();
+          if (currentTitle) loadRecs(currentTitle, currentUploader);
+        } catch (err) {
+          controlErrorEl.textContent = err.message;
+        } finally {
+          playPendingId = null;
+          playerLoading.style.display = "none";
+          renderResults(results);
+          loadHistory();
+        }
+      }
+
+      function advanceGeneralQueue() {
+        if (!generalQueueActive || !generalQueue.length) return;
+
+        generalQueueIndex++;
+
+        // If we've reached the end, stop
+        if (generalQueueIndex >= generalQueue.length) {
+          generalQueueActive = false;
+          generalQueueIndex = 0;
           renderQueuePanel();
           return;
         }
-      }
-      const next = plQueue[plQueueIndex];
-      renderQueuePanel();
-      handlePlay(next.id, next.id);
-    }
 
-    function renderQueuePanel() {
-      if (!plQueueActive || !plQueue.length) {
-        queuePanel.classList.add("hidden");
-        queueEmpty.classList.remove("hidden");
-        return;
+        renderQueuePanel();
+        const next = generalQueue[generalQueueIndex];
+        handlePlay(next.id, next.id);
       }
-      queuePanel.classList.remove("hidden");
-      queueEmpty.classList.add("hidden");
-      queueModeEl.textContent = plQueueMode === "shuffle" ? "🔀 Shuffle" : plQueueMode === "loop" ? "🔁 Loop" : "Sequential";
-      queueList.innerHTML = "";
-      plQueue.forEach((track, i) => {
-        const item = document.createElement("div");
-        item.className = "nq-item" + (i === plQueueIndex ? " active" : "");
-        item.textContent = `${i + 1}. ${track.title}`;
-        if (i !== plQueueIndex) {
-          item.style.cursor = "pointer";
-          item.onclick = () => { plQueueIndex = i; renderQueuePanel(); handlePlay(track.id, track.id); };
+
+      function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
         }
-        queueList.appendChild(item);
-      });
-    }
-
-    /* ==== LISTENING HISTORY ==== */
-    async function loadHistory() {
-      try {
-        const d = await api("/api/history");
-        renderHistory(d.history || []);
-      } catch { /* ignore */ }
-    }
-    function renderHistory(items) {
-      historyListEl.innerHTML = "";
-      if (!items.length) {
-        historyListEl.innerHTML = '<div class="muted" style="font-size:12px;">No history yet.</div>';
-        return;
       }
-      items.forEach((h) => {
-        const row = document.createElement("div");
-        row.className = "history-item";
-        row.innerHTML = `
-          <div style="flex:1;min-width:0;">
-            <div class="hi-title">${esc(h.title)}</div>
-            <div class="hi-sub">${esc(h.uploader || "")}</div>
-          </div>`;
-        const btn = document.createElement("button");
-        btn.textContent = "▶";
-        btn.onclick = (e) => { e.stopPropagation(); plQueueActive = false; handlePlay(h.id, h.id); };
-        row.appendChild(btn);
-        historyListEl.appendChild(row);
-      });
-    }
 
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-    }
-
-    /* ---- event bindings ---- */
-    document.getElementById("searchBtn").onclick = doSearch;
-    document.getElementById("searchInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { clearTimeout(searchDebounce); doSearch(); }
-    });
-    document.getElementById("searchInput").addEventListener("input", () => {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(doSearch, 400);
-    });
-    document.getElementById("pauseBtn").onclick  = () => { lastStatus = "paused"; playerStatus.textContent = "PAUSED"; postCtrl("/api/pause"); };
-    document.getElementById("resumeBtn").onclick = () => { lastStatus = "playing"; lastUpdateTs = Date.now(); playerStatus.textContent = "PLAYING"; postCtrl("/api/resume"); };
-    document.getElementById("stopBtn").onclick   = () => { lastStatus = "idle"; playerStatus.textContent = "IDLE"; plQueueActive = false; renderQueuePanel(); postCtrl("/api/stop"); };
-    document.getElementById("volume").oninput    = (e) => { api("/api/volume", { method: "POST", body: JSON.stringify({ level: e.target.value }) }).catch(() => {}); };
-    document.getElementById("backBtn").onclick   = showSearch;
-    progressEl.addEventListener("input", () => { isSeeking = true; curTimeEl.textContent = fmt(Number(progressEl.value)); });
-    progressEl.addEventListener("change", async () => {
-      isSeeking = false;
-      try { await api("/api/seek", { method: "POST", body: JSON.stringify({ position: Number(progressEl.value) }) }); }
-      catch (err) { controlErrorEl.textContent = err.message; }
-    });
-
-    /* ---- boot ---- */
-    refreshStatus();
-    loadPlaylists();
-    loadHistory();
-    setInterval(refreshStatus, 1000);
-    setInterval(loadHistory, 10000);
-    requestAnimationFrame(tick);
-  </script>
-  <!-- ===== AI CHAT PANEL ===== -->
-  <button id="chatToggle" title="Ask Resonance AI for music">🤖</button>
-  <div id="chatPanel">
-    <div id="chatHeader">
-      <span style="font-size:14px;">✨</span>
-      <h3>Resonance AI</h3>
-      <span class="tag">Gemini</span>
-    </div>
-    <div id="chatMessages">
-      <div class="chat-msg ai">Hi! Tell me what mood you're in and I'll find the perfect music for you. 🎶</div>
-    </div>
-    <div id="chatInputRow">
-      <input id="chatInput" type="text" placeholder="e.g. chill lo-fi for studying" />
-      <button id="chatSend">Send</button>
-    </div>
-  </div>
-
-  <script>
-    /* ---- Chat panel logic ---- */
-    const chatPanel    = document.getElementById("chatPanel");
-    const chatMessages = document.getElementById("chatMessages");
-    const chatInput    = document.getElementById("chatInput");
-    const chatSend     = document.getElementById("chatSend");
-
-    document.getElementById("chatToggle").onclick = () => chatPanel.classList.toggle("open");
-
-    async function sendChat() {
-      const msg = chatInput.value.trim();
-      if (!msg) return;
-      chatInput.value = "";
-      chatSend.disabled = true;
-
-      // User bubble
-      const userBubble = document.createElement("div");
-      userBubble.className = "chat-msg user";
-      userBubble.textContent = msg;
-      chatMessages.appendChild(userBubble);
-
-      // Typing indicator
-      const typing = document.createElement("div");
-      typing.className = "chat-typing";
-      typing.textContent = "Resonance is thinking…";
-      chatMessages.appendChild(typing);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-
-      try {
-        const r = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msg })
+      /* ---- event bindings ---- */
+      document.getElementById("searchBtn").onclick = doSearch;
+      document
+        .getElementById("searchInput")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            clearTimeout(searchDebounce);
+            doSearch();
+          }
         });
-        const d = await r.json();
-        typing.remove();
-        if (!d.ok) throw new Error(d.error);
-
-        const aiBubble = document.createElement("div");
-        aiBubble.className = "chat-msg ai";
-        let html = `<div style="margin-bottom:8px;">${d.message}</div>`;
-        if (d.suggestions?.length) {
-          html += '<div>';
-          d.suggestions.forEach((s) => {
-            const q = (s.query || "").replace(/"/g, '&quot;');
-            html += `<button class="suggestion-btn" data-query="${q}" title="${s.reason || ""}">${s.query}</button>`;
-          });
-          html += '</div>';
+      document.getElementById("searchInput").addEventListener("input", () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(doSearch, 400);
+      });
+      document.getElementById("pauseBtn").onclick = () => {
+        lastStatus = "paused";
+        playerStatus.textContent = "PAUSED";
+        postCtrl("/api/pause");
+      };
+      document.getElementById("resumeBtn").onclick = () => {
+        lastStatus = "playing";
+        lastUpdateTs = Date.now();
+        playerStatus.textContent = "PLAYING";
+        postCtrl("/api/resume");
+      };
+      document.getElementById("stopBtn").onclick = async () => {
+        try {
+          playerStatus.textContent = "STOPPING...";
+          await api("/api/stop", { method: "POST" });
+          lastStatus = "idle";
+          playerStatus.textContent = "IDLE";
+          plQueueActive = false;
+          generalQueueActive = false;
+          renderQueuePanel();
+        } catch (err) {
+          controlErrorEl.textContent = err.message;
         }
-        aiBubble.innerHTML = html;
-
-        // Click a suggestion to directly play it
-        aiBubble.querySelectorAll(".suggestion-btn").forEach((btn) => {
-          btn.onclick = async () => {
-            const query = btn.dataset.query;
-            btn.disabled = true;
-            btn.textContent = "⏳ Playing…";
-            chatPanel.classList.remove("open");
-            showPlayer();
-            playerLoading.style.display = "flex";
+      };
+      document.getElementById("nextBtn").onclick = async () => {
+        if (
+          generalQueue.length > 0 &&
+          generalQueueIndex < generalQueue.length - 1
+        ) {
+          try {
             controlErrorEl.textContent = "";
-            try {
-              await api("/api/play", { method: "POST", body: JSON.stringify({ query }) });
-              playerLoading.style.display = "none";
-              await refreshStatus();
-              if (currentTitle) loadRecs(currentTitle, currentUploader);
-              btn.textContent = "✓ Playing";
-            } catch (err) {
-              playerLoading.style.display = "none";
-              controlErrorEl.textContent = err.message;
-              btn.textContent = query;
-              btn.disabled = false;
+            // Force stop current song first
+            await api("/api/stop", { method: "POST" });
+            // Wait for backend to report idle (avoid overlaps)
+            await waitForStop(4000, 100);
+            // Then advance queue and play directly
+            generalQueueIndex++;
+            renderQueuePanel();
+            const next = generalQueue[generalQueueIndex];
+            if (next) {
+              generalQueueActive = true;
+              await internalPlay(next.id, next.id);
             }
-          };
-        });
+          } catch (err) {
+            controlErrorEl.textContent = err.message;
+          }
+        } else {
+          controlErrorEl.textContent = "No next song in queue";
+          setTimeout(() => {
+            controlErrorEl.textContent = "";
+          }, 2000);
+        }
+      };
+      document.getElementById("prevBtn").onclick = async () => {
+        if (generalQueue.length > 0 && generalQueueIndex > 0) {
+          try {
+            controlErrorEl.textContent = "";
+            // Force stop current song first
+            await api("/api/stop", { method: "POST" });
+            // Wait for backend to report idle (avoid overlaps)
+            await waitForStop(4000, 100);
+            // Then go to previous and play directly
+            generalQueueIndex--;
+            renderQueuePanel();
+            const prev = generalQueue[generalQueueIndex];
+            if (prev) {
+              generalQueueActive = true;
+              await internalPlay(prev.id, prev.id);
+            }
+          } catch (err) {
+            controlErrorEl.textContent = err.message;
+          }
+        } else {
+          controlErrorEl.textContent = "No previous song in queue";
+          setTimeout(() => {
+            controlErrorEl.textContent = "";
+          }, 2000);
+        }
+      };
+      document.getElementById("volume").oninput = (e) => {
+        api("/api/volume", {
+          method: "POST",
+          body: JSON.stringify({ level: e.target.value }),
+        }).catch(() => {});
+      };
+      document.getElementById("backBtn").onclick = showSearch;
+      progressEl.addEventListener("input", () => {
+        isSeeking = true;
+        curTimeEl.textContent = fmt(Number(progressEl.value));
+      });
+      progressEl.addEventListener("change", async () => {
+        isSeeking = false;
+        try {
+          await api("/api/seek", {
+            method: "POST",
+            body: JSON.stringify({ position: Number(progressEl.value) }),
+          });
+        } catch (err) {
+          controlErrorEl.textContent = err.message;
+        }
+      });
 
-        chatMessages.appendChild(aiBubble);
-      } catch (err) {
-        typing.remove();
-        const errBubble = document.createElement("div");
-        errBubble.className = "chat-msg ai";
-        errBubble.innerHTML = `<span class="error">⚠ ${err.message}</span>`;
-        chatMessages.appendChild(errBubble);
+      /* ---- boot ---- */
+      refreshStatus();
+      loadPlaylists();
+      loadHistory();
+      setInterval(refreshStatus, 1000);
+      setInterval(loadHistory, 10000);
+      requestAnimationFrame(tick);
+    </script>
+    <!-- ===== AI CHAT PANEL ===== -->
+    <button id="chatToggle" title="Ask Resonance AI for music">🤖</button>
+    <div id="chatPanel" style="bottom: 72px">
+      <div id="chatHeader">
+        <span style="font-size: 14px">✨</span>
+        <h3>Resonance AI</h3>
+        <span class="tag">Gemini</span>
+      </div>
+      <div id="chatMessages">
+        <div class="chat-msg ai">
+          Hi! Tell me what mood you're in and I'll find the perfect music for
+          you. 🎶
+        </div>
+      </div>
+      <div id="chatInputRow">
+        <input
+          id="chatInput"
+          type="text"
+          placeholder="e.g. chill lo-fi for studying"
+        />
+        <button id="chatSend">Send</button>
+      </div>
+    </div>
+
+    <script>
+      /* ---- Chat panel logic ---- */
+      const chatPanel = document.getElementById("chatPanel");
+      const chatMessages = document.getElementById("chatMessages");
+      const chatInput = document.getElementById("chatInput");
+      const chatSend = document.getElementById("chatSend");
+      const chatHeader = document.getElementById("chatHeader");
+      const chatToggle = document.getElementById("chatToggle");
+
+      /* ---- Drag functionality for toggle button ---- */
+      let isDragging = false;
+      let hasMoved = false; // Track if user actually dragged or just clicked
+      let currentX;
+      let currentY;
+      let initialX;
+      let initialY;
+      let xOffset = 0;
+      let yOffset = 0;
+
+      chatToggle.addEventListener("mousedown", dragStart);
+      document.addEventListener("mousemove", drag);
+      document.addEventListener("mouseup", dragEnd);
+
+      // Touch support for mobile
+      chatToggle.addEventListener("touchstart", dragStart);
+      document.addEventListener("touchmove", drag);
+      document.addEventListener("touchend", dragEnd);
+
+      function dragStart(e) {
+        if (e.type === "touchstart") {
+          initialX = e.touches[0].clientX - xOffset;
+          initialY = e.touches[0].clientY - yOffset;
+        } else {
+          initialX = e.clientX - xOffset;
+          initialY = e.clientY - yOffset;
+        }
+
+        isDragging = true;
+        hasMoved = false;
+        chatToggle.classList.add("dragging");
       }
-      chatSend.disabled = false;
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
 
-    chatSend.onclick = sendChat;
-    chatInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
-  </script>
-</body>
+      function drag(e) {
+        if (isDragging) {
+          e.preventDefault();
+          hasMoved = true; // User is dragging, not just clicking
+
+          if (e.type === "touchmove") {
+            currentX = e.touches[0].clientX - initialX;
+            currentY = e.touches[0].clientY - initialY;
+          } else {
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+          }
+
+          xOffset = currentX;
+          yOffset = currentY;
+
+          // Get viewport dimensions
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const toggleSize = 44;
+
+          // Calculate position from bottom-right (original position)
+          const right =
+            viewportWidth - (viewportWidth - 16 - toggleSize) - currentX;
+          const bottom =
+            viewportHeight - (viewportHeight - 16 - toggleSize) - currentY;
+
+          // Keep toggle button within viewport bounds
+          const constrainedRight = Math.max(
+            10,
+            Math.min(viewportWidth - toggleSize - 10, right),
+          );
+          const constrainedBottom = Math.max(
+            10,
+            Math.min(viewportHeight - toggleSize - 10, bottom),
+          );
+
+          chatToggle.style.right = constrainedRight + "px";
+          chatToggle.style.bottom = constrainedBottom + "px";
+          chatToggle.style.left = "auto";
+          chatToggle.style.top = "auto";
+
+          // If panel is open, update its position to be above the toggle
+          if (chatPanel.classList.contains("open")) {
+            positionPanelRelativeToToggle(constrainedRight, constrainedBottom);
+          }
+        }
+      }
+
+      function dragEnd(e) {
+        if (isDragging) {
+          initialX = currentX;
+          initialY = currentY;
+          isDragging = false;
+          chatToggle.classList.remove("dragging");
+
+          // Only toggle panel if user clicked (didn't drag)
+          if (!hasMoved) {
+            chatPanel.classList.toggle("open");
+
+            // Position panel when opening
+            if (chatPanel.classList.contains("open")) {
+              const toggleRect = chatToggle.getBoundingClientRect();
+              const toggleRight = window.innerWidth - toggleRect.right;
+              const toggleBottom = window.innerHeight - toggleRect.bottom;
+              positionPanelRelativeToToggle(toggleRight, toggleBottom);
+            }
+          }
+        }
+      }
+
+      function positionPanelRelativeToToggle(toggleRight, toggleBottom) {
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const panelWidth = 340;
+        const panelHeight = chatPanel.offsetHeight || 440;
+        const gap = 16;
+
+        // Position panel above the toggle button (toggle bottom + toggle height + gap)
+        const panelBottom = toggleBottom + 44 + gap;
+
+        // Keep panel within viewport bounds
+        const constrainedRight = Math.max(
+          10,
+          Math.min(viewportWidth - panelWidth - 10, toggleRight),
+        );
+        const constrainedBottom = Math.max(
+          10,
+          Math.min(viewportHeight - panelHeight - 10, panelBottom),
+        );
+
+        chatPanel.style.right = constrainedRight + "px";
+        chatPanel.style.bottom = constrainedBottom + "px";
+        chatPanel.style.left = "auto";
+        chatPanel.style.top = "auto";
+      }
+
+      async function sendChat() {
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+        chatInput.value = "";
+        chatSend.disabled = true;
+
+        // User bubble
+        const userBubble = document.createElement("div");
+        userBubble.className = "chat-msg user";
+        userBubble.textContent = msg;
+        chatMessages.appendChild(userBubble);
+
+        // Typing indicator
+        const typing = document.createElement("div");
+        typing.className = "chat-typing";
+        typing.textContent = "Resonance is thinking…";
+        chatMessages.appendChild(typing);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        try {
+          const r = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg }),
+          });
+
+          let d;
+          try {
+            d = await r.json();
+          } catch (parseErr) {
+            throw new Error(
+              "Failed to parse AI response. The AI returned invalid data.",
+            );
+          }
+
+          typing.remove();
+          if (!d.ok) throw new Error(d.error || "AI request failed");
+
+          const aiBubble = document.createElement("div");
+          aiBubble.className = "chat-msg ai";
+          let html = `<div style="margin-bottom:8px;">${esc(d.message || "I couldn't generate a response.")}</div>`;
+          if (d.suggestions?.length) {
+            html += "<div>";
+            d.suggestions.forEach((s) => {
+              const q = esc(s.query || "").replace(/"/g, "&quot;");
+              const displayQuery = esc(s.query || "");
+              const reason = esc(s.reason || "");
+              html += `<button class="suggestion-btn" data-query="${q}" title="${reason}">${displayQuery}</button>`;
+            });
+            html += "</div>";
+          }
+          aiBubble.innerHTML = html;
+
+          // Click a suggestion to directly play it, and add to playlist
+          aiBubble.querySelectorAll(".suggestion-btn").forEach((btn) => {
+            // Play on click (existing behavior)
+            btn.onclick = async () => {
+              const query = btn.dataset.query;
+              btn.disabled = true;
+              btn.textContent = "⏳ Playing…";
+              chatPanel.classList.remove("open");
+              showPlayer();
+              playerLoading.style.display = "flex";
+              controlErrorEl.textContent = "";
+              try {
+                await api("/api/play", {
+                  method: "POST",
+                  body: JSON.stringify({ query }),
+                });
+                playerLoading.style.display = "none";
+                await refreshStatus();
+                if (currentTitle) loadRecs(currentTitle, currentUploader);
+                btn.textContent = "✓ Playing";
+              } catch (err) {
+                playerLoading.style.display = "none";
+                controlErrorEl.textContent = err.message;
+                btn.textContent = query;
+                btn.disabled = false;
+              }
+            };
+
+            // Add-to-playlist button next to each suggestion
+            if (playlists.length > 0) {
+              const wrap = document.createElement("span");
+              wrap.className = "add-to-pl-wrap";
+              const addBtn = document.createElement("button");
+              addBtn.className = "secondary";
+              addBtn.style.marginLeft = "6px";
+              addBtn.textContent = "+";
+              addBtn.title = "Add to playlist";
+              addBtn.onclick = (e) => {
+                e.stopPropagation();
+                const existing = wrap.querySelector(".add-to-pl-menu");
+                if (existing) {
+                  existing.remove();
+                  return;
+                }
+                document
+                  .querySelectorAll(".add-to-pl-menu")
+                  .forEach((m) => m.remove());
+                const menu = document.createElement("div");
+                menu.className = "add-to-pl-menu";
+                playlists.forEach((pl) => {
+                  const mi = document.createElement("button");
+                  mi.className = "pl-menu-item";
+                  mi.textContent = pl.name;
+                  mi.onclick = async (ev) => {
+                    ev.stopPropagation();
+                    try {
+                      // Use the suggestion query as title, id as query (best effort)
+                      await api(`/api/playlists/${pl.id}/tracks`, {
+                        method: "POST",
+                        body: JSON.stringify({
+                          id: btn.dataset.query,
+                          title: btn.textContent,
+                          uploader: "",
+                          duration: null,
+                          thumbnail: null,
+                        }),
+                      });
+                      mi.textContent = "✓ Added";
+                      mi.disabled = true;
+                      await loadPlaylists();
+                    } catch (err) {
+                      mi.textContent = err.message;
+                    }
+                  };
+                  menu.appendChild(mi);
+                });
+                wrap.appendChild(menu);
+              };
+              addBtn.tabIndex = -1;
+              wrap.appendChild(addBtn);
+              btn.parentNode.insertBefore(wrap, btn.nextSibling);
+            }
+          });
+
+          chatMessages.appendChild(aiBubble);
+        } catch (err) {
+          typing.remove();
+          const errBubble = document.createElement("div");
+          errBubble.className = "chat-msg ai";
+          errBubble.innerHTML = `<span class="error">⚠ ${err.message}</span>`;
+          chatMessages.appendChild(errBubble);
+        }
+        chatSend.disabled = false;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      chatSend.onclick = sendChat;
+      chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") sendChat();
+      });
+    </script>
+  </body>
 </html>

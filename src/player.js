@@ -33,10 +33,13 @@ let ipcClient = null;
 let state = "idle";
 let lastUrl = null;
 let lastMeta = null;
+const urlCache = new Map();
+const URL_CACHE_MS = 5 * 60 * 1000;
 const metaCache = new Map();
 const searchCache = new Map();
 const CACHE_MS = 5 * 60 * 1000;
 let requestId = 0;
+let pendingPlayRequest = null; // Track if there's a play operation in progress
 
 function assertDeps() {
   if (!YT_CMD) {
@@ -99,6 +102,8 @@ function normalizeMeta(entry) {
 
 async function resolveUrl(target) {
   if (!YT_CMD) throw new Error("yt-dlp not found");
+  const cached = urlCache.get(target);
+  if (cached && Date.now() - cached.t < URL_CACHE_MS) return cached.v;
   return new Promise((resolve, reject) => {
     const chunks = [];
     const errChunks = [];
@@ -112,7 +117,9 @@ async function resolveUrl(target) {
     proc.on("close", (code) => {
       const out = Buffer.concat(chunks).toString().trim();
       if (code !== 0 || !out) return reject(new Error(Buffer.concat(errChunks).toString() || "Unable to resolve stream URL via yt-dlp"));
-      resolve(out.split("\n")[0].trim());
+      const url = out.split("\n")[0].trim();
+      urlCache.set(target, { t: Date.now(), v: url });
+      resolve(url);
     });
   });
 }
@@ -130,9 +137,69 @@ async function getMetadata(target) {
 
 function cleanupIpc() {
   if (ipcClient) {
-    ipcClient.destroy();
+    try {
+      ipcClient.destroy();
+    } catch (err) {
+      // Ignore cleanup errors
+    }
     ipcClient = null;
   }
+}
+
+// Force kill any existing player process - synchronous and aggressive
+async function forceStopPlayer() {
+  // Clear any pending requests first
+  pendingPlayRequest = null;
+  
+  // Kill the player process immediately
+  if (playerProcess) {
+    try {
+      // Try graceful kill first
+      playerProcess.kill("SIGTERM");
+      // Wait a tiny bit
+      await delay(20);
+      // Force kill if still alive
+      if (playerProcess && !playerProcess.killed) {
+        playerProcess.kill("SIGKILL");
+      }
+      // Wait for process to actually die
+      await delay(30);
+    } catch (err) {
+      // Ignore kill errors
+    }
+    playerProcess = null;
+  }
+  
+  // Clean up IPC immediately
+  cleanupIpc();
+
+  // Aggressively kill any lingering mpv processes as a safety-net
+  try {
+    if (process.platform === "win32") {
+      // taskkill will terminate mpv and its launcher if present
+      try { spawnSync("taskkill", ["/IM", "mpv.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
+      try { spawnSync("taskkill", ["/IM", "mpv-console-launcher.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
+    } else {
+      try { spawnSync("pkill", ["-f", "mpv"], { windowsHide: true, stdio: "ignore" }); } catch {}
+    }
+  } catch (err) {
+    // ignore
+  }
+  
+  // Try to remove the pipe file if it exists (Unix)
+  if (process.platform !== "win32") {
+    try {
+      if (fs.existsSync(IPC_PIPE)) {
+        fs.unlinkSync(IPC_PIPE);
+      }
+    } catch (err) {
+      // Ignore cleanup errors
+    }
+  }
+  
+  state = "idle";
+  lastUrl = null;
+  lastMeta = null;
 }
 
 async function connectIpc(retries = 10) {
@@ -155,7 +222,7 @@ async function connectIpc(retries = 10) {
   throw new Error("Could not connect to mpv IPC server");
 }
 
-/* IPC command queue — serialises access to prevent race conditions */
+/* IPC command queue – serialises access to prevent race conditions */
 const ipcQueue = [];
 let ipcProcessing = false;
 
@@ -228,30 +295,94 @@ function spawnPlayer(url) {
   if (!MPV_CMD) throw new Error("mpv not found");
   const proc = spawn(MPV_CMD, args, { windowsHide: true, stdio: ["ignore", "ignore", "pipe"] });
   proc.on("exit", () => {
-    state = "idle";
-    lastUrl = null;
-    lastMeta = null;
-    cleanupIpc();
-    playerProcess = null;
+    // Only reset state if this is still the active process
+    if (playerProcess === proc) {
+      state = "idle";
+      lastUrl = null;
+      lastMeta = null;
+      cleanupIpc();
+      playerProcess = null;
+    }
   });
   proc.stderr?.on("data", () => {});
   return proc;
 }
 
+let lastPlayRequest = { target: null, time: 0 };
 export async function play(input) {
   assertDeps();
-  if (playerProcess) {
-    playerProcess.kill();
-    cleanupIpc();
-  }
   const target = isUrl(input) ? input : `ytsearch1:${input}`;
-  const [url, meta] = await Promise.all([resolveUrl(target), getMetadata(target)]);
+  
+  // Create a unique request ID to track this play request
+  const requestTimestamp = Date.now();
+  
+  // Debounce repeated play requests for the same song within 1s
+  if (lastPlayRequest.target === target && requestTimestamp - lastPlayRequest.time < 1000) {
+    return { status: state, url: lastUrl, backend: "mpv+yt-dlp", meta: lastMeta };
+  }
+  lastPlayRequest = { target, time: requestTimestamp };
+  
+  // If there's already a play request in progress, cancel it
+  if (pendingPlayRequest) {
+    pendingPlayRequest.cancelled = true;
+  }
+  
+  // Create a new play request tracker
+  const currentRequest = { cancelled: false, timestamp: requestTimestamp };
+  pendingPlayRequest = currentRequest;
+  
+  // CRITICAL: Force stop any existing player immediately and wait for it to die
+  await forceStopPlayer();
+  
+  // Extra safety: wait a bit more to ensure everything is cleaned up
+  await delay(50);
+  
+  // Fetch URL and metadata in parallel
+  let url, meta;
+  try {
+    // Use Promise.all for parallel execution
+    [url, meta] = await Promise.all([
+      resolveUrl(target),
+      getMetadata(target)
+    ]);
+    
+    // Check if this request was cancelled while we were fetching
+    if (currentRequest.cancelled) {
+      return { status: "cancelled", url: null, backend: "mpv+yt-dlp", meta: null };
+    }
+  } catch (e) {
+    state = "idle";
+    pendingPlayRequest = null;
+    throw e;
+  }
+  
+  // One final check: ensure nothing is playing before we spawn
+  if (playerProcess) {
+    await forceStopPlayer();
+    await delay(30);
+  }
+  
+  // Spawn the player
   const proc = spawnPlayer(url);
+  
+  // Check again if cancelled before setting as active
+  if (currentRequest.cancelled) {
+    try {
+      proc.kill("SIGKILL");
+    } catch (err) {
+      // Ignore
+    }
+    return { status: "cancelled", url: null, backend: "mpv+yt-dlp", meta: null };
+  }
+  
   playerProcess = proc;
   lastUrl = url;
   lastMeta = meta;
   state = "playing";
-  await delay(150);
+  pendingPlayRequest = null;
+  
+  // Reduced delay for faster startup
+  await delay(50);
   return { status: state, url, backend: "mpv+yt-dlp", meta };
 }
 
@@ -276,22 +407,67 @@ export async function resume() {
 }
 
 export async function stop() {
-  try {
-    if (playerProcess) {
-      playerProcess.kill();
-    } else {
-      await sendMpv({ command: ["quit"] });
-    }
-    cleanupIpc();
-    state = "idle";
-    const url = lastUrl;
-    const meta = lastMeta;
-    lastUrl = null;
-    lastMeta = null;
-    return { status: state, url, meta };
-  } catch {
-    throw new Error("Nothing is playing");
+  const url = lastUrl;
+  const meta = lastMeta;
+  
+  // Cancel any pending play requests
+  if (pendingPlayRequest) {
+    pendingPlayRequest.cancelled = true;
+    pendingPlayRequest = null;
   }
+  
+  // Force kill the player
+  if (playerProcess) {
+    try {
+      playerProcess.kill("SIGTERM");
+      await delay(20);
+      if (playerProcess && !playerProcess.killed) {
+        playerProcess.kill("SIGKILL");
+      }
+    } catch (err) {
+      // Ignore
+    }
+    playerProcess = null;
+  }
+  
+  // Try IPC quit as backup
+  try {
+    await sendMpv({ command: ["quit"] });
+  } catch {
+    // Ignore IPC errors
+  }
+  
+  // Clean up everything
+  cleanupIpc();
+  
+  // Remove pipe file on Unix
+  if (process.platform !== "win32") {
+    try {
+      if (fs.existsSync(IPC_PIPE)) {
+        fs.unlinkSync(IPC_PIPE);
+      }
+    } catch (err) {
+      // Ignore
+    }
+  }
+
+  // As a last-resort, kill lingering mpv processes (Windows / Unix)
+  try {
+    if (process.platform === "win32") {
+      try { spawnSync("taskkill", ["/IM", "mpv.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
+      try { spawnSync("taskkill", ["/IM", "mpv-console-launcher.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
+    } else {
+      try { spawnSync("pkill", ["-f", "mpv"], { windowsHide: true, stdio: "ignore" }); } catch {}
+    }
+  } catch (err) {
+    // ignore
+  }
+  
+  state = "idle";
+  lastUrl = null;
+  lastMeta = null;
+  
+  return { status: state, url, meta };
 }
 
 export async function seek(seconds) {
@@ -353,7 +529,109 @@ export async function search(query, limit = 30) {
 }
 
 export async function related(title, uploader, limit = 8) {
-  const query = uploader ? `${uploader} ${title}` : title;
-  const results = await search(query, limit + 2);
-  return results.filter((r) => r.title !== title).slice(0, limit);
+  if (!YT_CMD) throw new Error("yt-dlp not found");
+  
+  const allResults = [];
+  const seen = new Set([title.toLowerCase()]);
+  
+  // Strategy 1: Search by artist/uploader (30% of results - similar artists)
+  if (uploader) {
+    try {
+      const artistCount = Math.ceil(limit * 0.3);
+      const artistResults = await search(uploader, artistCount + 2);
+      for (const item of artistResults) {
+        if (item.title && !seen.has(item.title.toLowerCase())) {
+          allResults.push(item);
+          seen.add(item.title.toLowerCase());
+        }
+      }
+    } catch (err) {
+      // Continue with other strategies
+    }
+  }
+  
+  // Strategy 2: Genre/keyword based search (40% of results)
+  const genreKeywords = extractGenreKeywords(title);
+  if (genreKeywords.length > 0 && allResults.length < limit) {
+    try {
+      const genreCount = Math.ceil(limit * 0.4);
+      const genreQuery = genreKeywords.slice(0, 3).join(' ') + ' music';
+      const genreResults = await search(genreQuery, genreCount + 5);
+      for (const item of genreResults) {
+        if (item.title && !seen.has(item.title.toLowerCase()) && allResults.length < limit) {
+          allResults.push(item);
+          seen.add(item.title.toLowerCase());
+        }
+      }
+    } catch (err) {
+      // Continue
+    }
+  }
+  
+  // Strategy 3: "Similar to" search (30% of results)
+  if (allResults.length < limit) {
+    try {
+      // Extract main title without extras
+      const cleanTitle = title.replace(/\(.*?\)|\[.*?\]|official|video|audio|lyrics|hd|4k/gi, '').trim();
+      const similarQuery = cleanTitle.substring(0, 40);
+      const similarResults = await search(similarQuery, limit + 5);
+      for (const item of similarResults) {
+        if (item.title && !seen.has(item.title.toLowerCase()) && allResults.length < limit) {
+          allResults.push(item);
+          seen.add(item.title.toLowerCase());
+        }
+      }
+    } catch (err) {
+      // Continue
+    }
+  }
+  
+  // Shuffle results for variety
+  shuffleArray(allResults);
+  
+  return allResults.slice(0, limit);
+}
+
+// Helper to shuffle array
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+// Helper function to extract genre/type keywords from title
+function extractGenreKeywords(title) {
+  if (!title) return [];
+  
+  const keywords = [];
+  const lowerTitle = title.toLowerCase();
+  
+  // Music genres and types
+  const genres = [
+    'rock', 'pop', 'jazz', 'classical', 'hip hop', 'rap', 'r&b', 'rnb',
+    'country', 'folk', 'blues', 'reggae', 'electronic', 'edm', 'house',
+    'techno', 'dubstep', 'trap', 'soul', 'funk', 'disco', 'punk',
+    'metal', 'indie', 'alternative', 'ambient', 'lofi', 'lo-fi', 'chill',
+    'acoustic', 'instrumental', 'vocal', 'remix', 'cover', 'live',
+    'orchestral', 'piano', 'guitar', 'violin', 'drums', 'bass',
+    'ballad', 'upbeat', 'sad', 'happy', 'relaxing', 'energetic',
+    'dance', 'synthwave', 'vaporwave', 'soundtrack', 'ost', 'anime',
+    'k-pop', 'kpop', 'j-pop', 'jpop', 'latin', 'spanish', 'french'
+  ];
+  
+  for (const genre of genres) {
+    if (lowerTitle.includes(genre)) {
+      keywords.push(genre);
+    }
+  }
+  
+  // Extract year if present (for era-based recommendations)
+  const yearMatch = title.match(/\b(19\d{2}|20\d{2})\b/);
+  if (yearMatch) {
+    const decade = Math.floor(parseInt(yearMatch[1]) / 10) * 10;
+    keywords.push(decade + 's');
+  }
+  
+  return keywords;
 }
