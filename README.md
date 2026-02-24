@@ -261,6 +261,7 @@ OnlineMusicPlayer/
 ├── .env                     # Gemini API key (gitignored, create manually)
 ├── .gitignore               # Ignores node_modules, .env, logs
 ├── listening-history.json   # Auto-generated play history (max 100 entries)
+├── playlists.json           # Auto-generated playlists data
 ├── package.json             # Dependencies and scripts
 └── README.md                # This file
 ```

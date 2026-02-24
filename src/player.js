@@ -33,21 +33,19 @@ let ipcClient = null;
 let state = "idle";
 let lastUrl = null;
 let lastMeta = null;
+
+// Caches
 const urlCache = new Map();
-const URL_CACHE_MS = 5 * 60 * 1000;
 const metaCache = new Map();
 const searchCache = new Map();
 const CACHE_MS = 5 * 60 * 1000;
+
 let requestId = 0;
-let pendingPlayRequest = null; // Track if there's a play operation in progress
+let pendingPlayRequest = null;
 
 function assertDeps() {
-  if (!YT_CMD) {
-    throw new Error("yt-dlp not found. Ensure it is on PATH or installed via winget.");
-  }
-  if (!MPV_CMD) {
-    throw new Error("mpv not found. Ensure it is on PATH or installed via winget.");
-  }
+  if (!YT_CMD) throw new Error("yt-dlp not found. Ensure it is on PATH or installed via winget.");
+  if (!MPV_CMD) throw new Error("mpv not found. Ensure it is on PATH or installed via winget.");
 }
 
 function isUrl(text) {
@@ -63,22 +61,20 @@ function runJson(args, errorMessage) {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"]
     });
-    proc.stdout.on("data", (d) => chunks.push(d));
-    proc.stderr.on("data", (d) => errChunks.push(d));
-    proc.on("error", (err) => reject(err));
-    proc.on("close", (code) => {
+    proc.stdout.on("data", d => chunks.push(d));
+    proc.stderr.on("data", d => errChunks.push(d));
+    proc.on("error", err => reject(err));
+    proc.on("close", code => {
       if (code !== 0) return reject(new Error(Buffer.concat(errChunks).toString() || errorMessage));
       try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
-      catch (e) { reject(new Error(errorMessage)); }
+      catch { reject(new Error(errorMessage)); }
     });
   });
 }
 
 function pickEntry(data) {
   if (!data) return null;
-  if (Array.isArray(data.entries) && data.entries.length > 0) {
-    return data.entries.find(Boolean);
-  }
+  if (Array.isArray(data.entries) && data.entries.length > 0) return data.entries.find(Boolean);
   return data;
 }
 
@@ -103,18 +99,17 @@ function normalizeMeta(entry) {
 async function resolveUrl(target) {
   if (!YT_CMD) throw new Error("yt-dlp not found");
   const cached = urlCache.get(target);
-  if (cached && Date.now() - cached.t < URL_CACHE_MS) return cached.v;
+  if (cached && Date.now() - cached.t < CACHE_MS) return cached.v;
   return new Promise((resolve, reject) => {
-    const chunks = [];
-    const errChunks = [];
+    const chunks = [], errChunks = [];
     const proc = spawn(YT_CMD, ["--ignore-config", "--no-warnings", "-f", "bestaudio/best", "--get-url", target], {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"]
     });
-    proc.stdout.on("data", (d) => chunks.push(d));
-    proc.stderr.on("data", (d) => errChunks.push(d));
-    proc.on("error", (err) => reject(err));
-    proc.on("close", (code) => {
+    proc.stdout.on("data", d => chunks.push(d));
+    proc.stderr.on("data", d => errChunks.push(d));
+    proc.on("error", err => reject(err));
+    proc.on("close", code => {
       const out = Buffer.concat(chunks).toString().trim();
       if (code !== 0 || !out) return reject(new Error(Buffer.concat(errChunks).toString() || "Unable to resolve stream URL via yt-dlp"));
       const url = out.split("\n")[0].trim();
@@ -137,74 +132,64 @@ async function getMetadata(target) {
 
 function cleanupIpc() {
   if (ipcClient) {
-    try {
-      ipcClient.destroy();
-    } catch (err) {
-      // Ignore cleanup errors
-    }
+    try { ipcClient.destroy(); } catch {}
     ipcClient = null;
   }
 }
 
-// Force kill any existing player process - synchronous and aggressive
-async function forceStopPlayer() {
-  // Clear any pending requests first
-  pendingPlayRequest = null;
-  
-  // Kill the player process immediately
-  if (playerProcess) {
-    try {
-      // Try graceful kill first
-      playerProcess.kill("SIGTERM");
-      // Wait a tiny bit
-      await delay(20);
-      // Force kill if still alive
-      if (playerProcess && !playerProcess.killed) {
-        playerProcess.kill("SIGKILL");
-      }
-      // Wait for process to actually die
-      await delay(30);
-    } catch (err) {
-      // Ignore kill errors
-    }
-    playerProcess = null;
-  }
-  
-  // Clean up IPC immediately
-  cleanupIpc();
-
-  // Aggressively kill any lingering mpv processes as a safety-net
+// Kill any running mpv processes on the OS level.
+// On Windows this is slow (~150ms) so we only do it when strictly needed.
+function killMpvProcesses() {
   try {
     if (process.platform === "win32") {
-      // taskkill will terminate mpv and its launcher if present
       try { spawnSync("taskkill", ["/IM", "mpv.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
       try { spawnSync("taskkill", ["/IM", "mpv-console-launcher.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
     } else {
-      try { spawnSync("pkill", ["-f", "mpv"], { windowsHide: true, stdio: "ignore" }); } catch {}
+      try { spawnSync("pkill", ["-9", "-f", "mpv"], { stdio: "ignore" }); } catch {}
     }
-  } catch (err) {
-    // ignore
-  }
-  
-  // Try to remove the pipe file if it exists (Unix)
+  } catch {}
+}
+
+function removeIpcSocket() {
   if (process.platform !== "win32") {
-    try {
-      if (fs.existsSync(IPC_PIPE)) {
-        fs.unlinkSync(IPC_PIPE);
-      }
-    } catch (err) {
-      // Ignore cleanup errors
-    }
+    try { if (fs.existsSync(IPC_PIPE)) fs.unlinkSync(IPC_PIPE); } catch {}
   }
-  
+}
+
+async function forceStopPlayer() {
+  pendingPlayRequest = null;
+
+  if (playerProcess) {
+    const proc = playerProcess;
+    playerProcess = null; // clear reference first
+    try {
+      proc.kill("SIGTERM");
+      // Give it a very short window to exit gracefully
+      await delay(30);
+      if (!proc.killed) proc.kill("SIGKILL");
+    } catch {}
+  }
+
+  cleanupIpc();
+
+  // Only call the OS-level kill if we know mpv might be orphaned
+  // (i.e. playerProcess reference was already null when we got here,
+  // suggesting a previous crash left a zombie).
+  // For normal stop flows the SIGKILL above is sufficient.
+  if (state !== "idle") {
+    killMpvProcesses();
+  }
+
+  removeIpcSocket();
+
   state = "idle";
   lastUrl = null;
   lastMeta = null;
 }
 
-async function connectIpc(retries = 10) {
+async function connectIpc(retries = 12) {
   cleanupIpc();
-  for (let i = 0; i < retries; i += 1) {
+  for (let i = 0; i < retries; i++) {
     try {
       await new Promise((resolve, reject) => {
         const client = createConnection(IPC_PIPE, () => {
@@ -216,13 +201,13 @@ async function connectIpc(retries = 10) {
       });
       return;
     } catch {
-      await delay(100);
+      await delay(80);
     }
   }
   throw new Error("Could not connect to mpv IPC server");
 }
 
-/* IPC command queue – serialises access to prevent race conditions */
+/* IPC command queue – serialises access */
 const ipcQueue = [];
 let ipcProcessing = false;
 
@@ -240,7 +225,6 @@ async function _drainIpc() {
   try {
     resolve(await _rawSend(cmd, expectResponse));
   } catch (err) {
-    // reconnect and retry once
     cleanupIpc();
     try { resolve(await _rawSend(cmd, expectResponse)); }
     catch { reject(err); }
@@ -262,23 +246,23 @@ async function _rawSend(cmd, expectResponse) {
       ipcClient?.off("end", onEnd);
       if (expectResponse) ipcClient?.off("data", onData);
     };
-    const onErr  = (e) => { cleanup(); cleanupIpc(); reject(e); };
-    const onEnd  = ()  => { cleanup(); cleanupIpc(); reject(new Error("IPC connection closed")); };
-    const onData = (chunk) => {
+    const onErr = e => { cleanup(); cleanupIpc(); reject(e); };
+    const onEnd = ()  => { cleanup(); cleanupIpc(); reject(new Error("IPC connection closed")); };
+    const onData = chunk => {
       for (const line of chunk.toString().trim().split("\n")) {
         try {
           const obj = JSON.parse(line);
           if (obj.request_id === id) { cleanup(); resolve(obj); return; }
-        } catch { /* skip */ }
+        } catch {}
       }
     };
     ipcClient.once("error", onErr);
     ipcClient.once("end", onEnd);
     if (expectResponse) ipcClient.on("data", onData);
-    ipcClient.write(`${JSON.stringify(payload)}\n`, (err) => {
+    ipcClient.write(`${JSON.stringify(payload)}\n`, err => {
       if (err) { cleanup(); reject(err); }
       else if (!expectResponse) { cleanup(); resolve(); }
-      else { timer = setTimeout(() => { cleanup(); reject(new Error("mpv response timeout")); }, 800); }
+      else { timer = setTimeout(() => { cleanup(); reject(new Error("mpv response timeout")); }, 1000); }
     });
   });
 }
@@ -295,7 +279,6 @@ function spawnPlayer(url) {
   if (!MPV_CMD) throw new Error("mpv not found");
   const proc = spawn(MPV_CMD, args, { windowsHide: true, stdio: ["ignore", "ignore", "pipe"] });
   proc.on("exit", () => {
-    // Only reset state if this is still the active process
     if (playerProcess === proc) {
       state = "idle";
       lastUrl = null;
@@ -309,80 +292,51 @@ function spawnPlayer(url) {
 }
 
 let lastPlayRequest = { target: null, time: 0 };
+
 export async function play(input) {
   assertDeps();
-  const target = isUrl(input) ? input : `ytsearch1:${input}`;
-  
-  // Create a unique request ID to track this play request
+  const target = isUrl(input) ? input : `ytmsearch1:${input}`;
+
   const requestTimestamp = Date.now();
-  
-  // Debounce repeated play requests for the same song within 1s
+
+  // Debounce repeated identical requests within 1s
   if (lastPlayRequest.target === target && requestTimestamp - lastPlayRequest.time < 1000) {
     return { status: state, url: lastUrl, backend: "mpv+yt-dlp", meta: lastMeta };
   }
   lastPlayRequest = { target, time: requestTimestamp };
-  
-  // If there's already a play request in progress, cancel it
-  if (pendingPlayRequest) {
-    pendingPlayRequest.cancelled = true;
-  }
-  
-  // Create a new play request tracker
+
+  // Cancel any in-flight play
+  if (pendingPlayRequest) pendingPlayRequest.cancelled = true;
   const currentRequest = { cancelled: false, timestamp: requestTimestamp };
   pendingPlayRequest = currentRequest;
-  
-  // CRITICAL: Force stop any existing player immediately and wait for it to die
+
+  // Stop existing player
   await forceStopPlayer();
-  
-  // Extra safety: wait a bit more to ensure everything is cleaned up
-  await delay(50);
-  
-  // Fetch URL and metadata in parallel
+  await delay(40);
+
+  // Fetch URL + metadata in parallel
   let url, meta;
   try {
-    // Use Promise.all for parallel execution
-    [url, meta] = await Promise.all([
-      resolveUrl(target),
-      getMetadata(target)
-    ]);
-    
-    // Check if this request was cancelled while we were fetching
-    if (currentRequest.cancelled) {
-      return { status: "cancelled", url: null, backend: "mpv+yt-dlp", meta: null };
-    }
+    [url, meta] = await Promise.all([resolveUrl(target), getMetadata(target)]);
+    if (currentRequest.cancelled) return { status: "cancelled", url: null, backend: "mpv+yt-dlp", meta: null };
   } catch (e) {
     state = "idle";
     pendingPlayRequest = null;
     throw e;
   }
-  
-  // One final check: ensure nothing is playing before we spawn
-  if (playerProcess) {
-    await forceStopPlayer();
-    await delay(30);
-  }
-  
-  // Spawn the player
+
+  // Final guard
+  if (playerProcess) { await forceStopPlayer(); await delay(20); }
+  if (currentRequest.cancelled) return { status: "cancelled", url: null, backend: "mpv+yt-dlp", meta: null };
+
   const proc = spawnPlayer(url);
-  
-  // Check again if cancelled before setting as active
-  if (currentRequest.cancelled) {
-    try {
-      proc.kill("SIGKILL");
-    } catch (err) {
-      // Ignore
-    }
-    return { status: "cancelled", url: null, backend: "mpv+yt-dlp", meta: null };
-  }
-  
   playerProcess = proc;
   lastUrl = url;
   lastMeta = meta;
   state = "playing";
   pendingPlayRequest = null;
-  
-  // Reduced delay for faster startup
-  await delay(50);
+
+  await delay(40);
   return { status: state, url, backend: "mpv+yt-dlp", meta };
 }
 
@@ -409,64 +363,28 @@ export async function resume() {
 export async function stop() {
   const url = lastUrl;
   const meta = lastMeta;
-  
-  // Cancel any pending play requests
-  if (pendingPlayRequest) {
-    pendingPlayRequest.cancelled = true;
-    pendingPlayRequest = null;
-  }
-  
-  // Force kill the player
+
+  if (pendingPlayRequest) { pendingPlayRequest.cancelled = true; pendingPlayRequest = null; }
+
   if (playerProcess) {
     try {
       playerProcess.kill("SIGTERM");
       await delay(20);
-      if (playerProcess && !playerProcess.killed) {
-        playerProcess.kill("SIGKILL");
-      }
-    } catch (err) {
-      // Ignore
-    }
+      if (playerProcess && !playerProcess.killed) playerProcess.kill("SIGKILL");
+    } catch {}
     playerProcess = null;
   }
-  
-  // Try IPC quit as backup
-  try {
-    await sendMpv({ command: ["quit"] });
-  } catch {
-    // Ignore IPC errors
-  }
-  
-  // Clean up everything
-  cleanupIpc();
-  
-  // Remove pipe file on Unix
-  if (process.platform !== "win32") {
-    try {
-      if (fs.existsSync(IPC_PIPE)) {
-        fs.unlinkSync(IPC_PIPE);
-      }
-    } catch (err) {
-      // Ignore
-    }
-  }
 
-  // As a last-resort, kill lingering mpv processes (Windows / Unix)
-  try {
-    if (process.platform === "win32") {
-      try { spawnSync("taskkill", ["/IM", "mpv.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
-      try { spawnSync("taskkill", ["/IM", "mpv-console-launcher.exe", "/F", "/T"], { windowsHide: true, stdio: "ignore" }); } catch {}
-    } else {
-      try { spawnSync("pkill", ["-f", "mpv"], { windowsHide: true, stdio: "ignore" }); } catch {}
-    }
-  } catch (err) {
-    // ignore
-  }
-  
+  try { await sendMpv({ command: ["quit"] }); } catch {}
+
+  cleanupIpc();
+  removeIpcSocket();
+  killMpvProcesses();
+
   state = "idle";
   lastUrl = null;
   lastMeta = null;
-  
+
   return { status: state, url, meta };
 }
 
@@ -489,17 +407,14 @@ export async function getStatus() {
   try {
     const posResp = await sendMpv({ command: ["get_property", "time-pos"] }, true);
     if (typeof posResp?.data === "number") position = posResp.data;
-  } catch {
-    // ignore
-  }
-  const durationSeconds = lastMeta?.durationSeconds ?? null;
+  } catch {}
   return {
     status: state,
     url: lastUrl,
     backend: playerProcess ? "mpv+yt-dlp" : null,
     meta: lastMeta,
     position,
-    durationSeconds
+    durationSeconds: lastMeta?.durationSeconds ?? null
   };
 }
 
@@ -508,91 +423,77 @@ export async function search(query, limit = 30) {
   const key = `${limit}:${query}`;
   const cached = searchCache.get(key);
   if (cached && Date.now() - cached.t < CACHE_MS) return cached.v;
-  const data = await runJson(["-J", "--skip-download", "--flat-playlist", `ytsearch${limit}:${query}`], "Unable to search via yt-dlp");
+
+  // ytmsearch uses YouTube Music — results are music tracks, not general videos.
+  // Fetch extra so we still have `limit` results after duration filtering.
+  const fetchCount = Math.min(limit * 2, 100);
+  const data = await runJson(
+    ["-J", "--skip-download", "--flat-playlist", `ytmsearch${fetchCount}:${query}`],
+    "Unable to search via yt-dlp"
+  );
   const entries = Array.isArray(data.entries) ? data.entries : [];
   const results = entries
     .filter(Boolean)
-    .map((entry) => {
+    .map(entry => {
       const meta = normalizeMeta(entry);
       return {
         id: meta?.id,
         title: meta?.title,
         uploader: meta?.uploader,
         duration: meta?.duration,
+        durationSeconds: meta?.durationSeconds,
         thumbnail: meta?.thumbnail,
         webpageUrl: meta?.webpageUrl
       };
     })
-    .filter((item) => item.id && item.title);
+    .filter(item => {
+      if (!item.id || !item.title) return false;
+      // Drop clips shorter than 30s (ads) or longer than 12 min (live sets / movies)
+      const dur = item.durationSeconds;
+      if (dur != null && (dur < 30 || dur > 720)) return false;
+      return true;
+    })
+    .slice(0, limit);
+
   searchCache.set(key, { t: Date.now(), v: results });
   return results;
 }
 
 export async function related(title, uploader, limit = 8) {
   if (!YT_CMD) throw new Error("yt-dlp not found");
-  
-  const allResults = [];
+
   const seen = new Set([title.toLowerCase()]);
-  
-  // Strategy 1: Search by artist/uploader (30% of results - similar artists)
-  if (uploader) {
-    try {
-      const artistCount = Math.ceil(limit * 0.3);
-      const artistResults = await search(uploader, artistCount + 2);
-      for (const item of artistResults) {
-        if (item.title && !seen.has(item.title.toLowerCase())) {
-          allResults.push(item);
-          seen.add(item.title.toLowerCase());
-        }
-      }
-    } catch (err) {
-      // Continue with other strategies
-    }
-  }
-  
-  // Strategy 2: Genre/keyword based search (40% of results)
+
+  // Build all three queries
+  const cleanTitle = title.replace(/\(.*?\)|\[.*?\]|official|video|audio|lyrics|hd|4k/gi, "").trim();
   const genreKeywords = extractGenreKeywords(title);
-  if (genreKeywords.length > 0 && allResults.length < limit) {
-    try {
-      const genreCount = Math.ceil(limit * 0.4);
-      const genreQuery = genreKeywords.slice(0, 3).join(' ') + ' music';
-      const genreResults = await search(genreQuery, genreCount + 5);
-      for (const item of genreResults) {
-        if (item.title && !seen.has(item.title.toLowerCase()) && allResults.length < limit) {
-          allResults.push(item);
-          seen.add(item.title.toLowerCase());
-        }
-      }
-    } catch (err) {
-      // Continue
+  const genreQuery = genreKeywords.length > 0
+    ? genreKeywords.slice(0, 3).join(" ") + " music"
+    : null;
+
+  // Fire all searches in parallel instead of serial
+  const queries = [
+    uploader ? search(uploader, Math.ceil(limit * 0.4) + 3) : Promise.resolve([]),
+    genreQuery ? search(genreQuery, Math.ceil(limit * 0.4) + 5) : Promise.resolve([]),
+    search(cleanTitle.substring(0, 40), limit + 5)
+  ];
+
+  const [artistResults, genreResults, similarResults] = await Promise.allSettled(queries).then(
+    results => results.map(r => (r.status === "fulfilled" ? r.value : []))
+  );
+
+  const allResults = [];
+  for (const item of [...artistResults, ...genreResults, ...similarResults]) {
+    if (item.title && !seen.has(item.title.toLowerCase())) {
+      allResults.push(item);
+      seen.add(item.title.toLowerCase());
     }
   }
-  
-  // Strategy 3: "Similar to" search (30% of results)
-  if (allResults.length < limit) {
-    try {
-      // Extract main title without extras
-      const cleanTitle = title.replace(/\(.*?\)|\[.*?\]|official|video|audio|lyrics|hd|4k/gi, '').trim();
-      const similarQuery = cleanTitle.substring(0, 40);
-      const similarResults = await search(similarQuery, limit + 5);
-      for (const item of similarResults) {
-        if (item.title && !seen.has(item.title.toLowerCase()) && allResults.length < limit) {
-          allResults.push(item);
-          seen.add(item.title.toLowerCase());
-        }
-      }
-    } catch (err) {
-      // Continue
-    }
-  }
-  
-  // Shuffle results for variety
+
   shuffleArray(allResults);
-  
   return allResults.slice(0, limit);
 }
 
-// Helper to shuffle array
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -600,38 +501,38 @@ function shuffleArray(array) {
   }
 }
 
-// Helper function to extract genre/type keywords from title
 function extractGenreKeywords(title) {
   if (!title) return [];
-  
   const keywords = [];
   const lowerTitle = title.toLowerCase();
-  
-  // Music genres and types
   const genres = [
-    'rock', 'pop', 'jazz', 'classical', 'hip hop', 'rap', 'r&b', 'rnb',
-    'country', 'folk', 'blues', 'reggae', 'electronic', 'edm', 'house',
-    'techno', 'dubstep', 'trap', 'soul', 'funk', 'disco', 'punk',
-    'metal', 'indie', 'alternative', 'ambient', 'lofi', 'lo-fi', 'chill',
-    'acoustic', 'instrumental', 'vocal', 'remix', 'cover', 'live',
-    'orchestral', 'piano', 'guitar', 'violin', 'drums', 'bass',
-    'ballad', 'upbeat', 'sad', 'happy', 'relaxing', 'energetic',
-    'dance', 'synthwave', 'vaporwave', 'soundtrack', 'ost', 'anime',
-    'k-pop', 'kpop', 'j-pop', 'jpop', 'latin', 'spanish', 'french'
+    "rock", "pop", "jazz", "classical", "hip hop", "rap", "r&b", "rnb",
+    "country", "folk", "blues", "reggae", "electronic", "edm", "house",
+    "techno", "dubstep", "trap", "soul", "funk", "disco", "punk",
+    "metal", "indie", "alternative", "ambient", "lofi", "lo-fi", "chill",
+    "acoustic", "instrumental", "vocal", "remix", "cover", "live",
+    "orchestral", "piano", "guitar", "violin", "drums", "bass",
+    "ballad", "upbeat", "sad", "happy", "relaxing", "energetic",
+    "dance", "synthwave", "vaporwave", "soundtrack", "ost", "anime",
+    "k-pop", "kpop", "j-pop", "jpop", "latin", "spanish", "french"
   ];
-  
   for (const genre of genres) {
-    if (lowerTitle.includes(genre)) {
-      keywords.push(genre);
-    }
+    if (lowerTitle.includes(genre)) keywords.push(genre);
   }
-  
-  // Extract year if present (for era-based recommendations)
   const yearMatch = title.match(/\b(19\d{2}|20\d{2})\b/);
-  if (yearMatch) {
-    const decade = Math.floor(parseInt(yearMatch[1]) / 10) * 10;
-    keywords.push(decade + 's');
-  }
-  
+  if (yearMatch) keywords.push((Math.floor(parseInt(yearMatch[1]) / 10) * 10) + "s");
   return keywords;
+}
+
+// Apply audio filter / equalizer via mpv IPC. `afString` should be a mpv af spec
+// e.g. "equalizer=g=6" or "equalizer=f=250:g=-3:width_type=o:width=2"
+export async function setEq(afString) {
+  if (!afString) throw new Error('afString required');
+  try {
+    // mpv supports af operation via the IPC command: ["af", "add", "<spec>"]
+    await sendMpv({ command: ["af", "add", afString] });
+    return { status: state, af: afString };
+  } catch (err) {
+    throw new Error('Failed to apply EQ: ' + (err.message || err));
+  }
 }

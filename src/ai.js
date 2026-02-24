@@ -10,18 +10,20 @@ const MAX_HISTORY = 100;
 /* ---- Listening history ---- */
 
 let history = [];
-try { history = JSON.parse(fs.readFileSync(HISTORY_PATH, "utf8")); } catch { /* fresh start */ }
+try {
+  history = JSON.parse(fs.readFileSync(HISTORY_PATH, "utf8"));
+} catch {
+  /* fresh start — file doesn't exist yet */
+}
 
 export function recordPlay(meta) {
   if (!meta?.title) return;
-  history.unshift({
-    title: meta.title,
-    uploader: meta.uploader || "",
-    id: meta.id || "",
-    ts: Date.now()
-  });
+  // Avoid duplicate consecutive entries for the same song
+  if (history[0]?.id && history[0].id === meta.id) return;
+  history.unshift({ title: meta.title, uploader: meta.uploader || "", id: meta.id || "", ts: Date.now() });
   if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
-  fs.writeFileSync(HISTORY_PATH, JSON.stringify(history, null, 2));
+  // Write async — don't block the response
+  fs.writeFile(HISTORY_PATH, JSON.stringify(history, null, 2), () => {});
 }
 
 export function getHistory(limit = 20) {
@@ -41,45 +43,29 @@ function getModel() {
   return genModel;
 }
 
-const SYSTEM_PROMPT = `You are Resonance AI, a music recommendation assistant. Suggest songs based on the user's request and history.
+const SYSTEM_PROMPT = `You are Resonance AI, a music recommendation assistant. Suggest SONGS (music tracks) based on the user's request and history.
 Respond with ONLY valid JSON with NO markdown, NO backticks, NO extra text. Use this exact format:
 {"message":"short friendly reply","suggestions":[{"query":"Artist - Song Title","reason":"brief reason"}]}
-Include 5-6 suggestions. Be specific with artist + song title. If unrelated to music, redirect politely.
+Include 5-6 suggestions. Each suggestion MUST be a real music track (song), NOT a podcast, interview, movie, TV show, or general video.
+Be specific with artist name + song title so it can be found on YouTube Music. If unrelated to music, redirect politely.
 CRITICAL: Your entire response must be valid JSON. Do not include any text before or after the JSON object.`;
 
 function cleanJsonResponse(text) {
-  // Remove markdown code blocks if present
   let cleaned = text.trim();
   const jsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch) {
-    cleaned = jsonMatch[1].trim();
-  }
-  
-  // Remove any leading/trailing non-JSON text
-  const jsonStart = cleaned.indexOf('{');
-  const jsonEnd = cleaned.lastIndexOf('}');
-  if (jsonStart !== -1 && jsonEnd !== -1) {
-    cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
-  }
-  
+  if (jsonMatch) cleaned = jsonMatch[1].trim();
+  const jsonStart = cleaned.indexOf("{");
+  const jsonEnd = cleaned.lastIndexOf("}");
+  if (jsonStart !== -1 && jsonEnd !== -1) cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
   return cleaned;
 }
 
 function validateResponse(parsed) {
-  if (!parsed || typeof parsed !== 'object') {
-    return false;
-  }
-  if (!parsed.message || typeof parsed.message !== 'string') {
-    return false;
-  }
-  if (!Array.isArray(parsed.suggestions)) {
-    return false;
-  }
-  // Validate each suggestion
-  for (const suggestion of parsed.suggestions) {
-    if (!suggestion.query || typeof suggestion.query !== 'string') {
-      return false;
-    }
+  if (!parsed || typeof parsed !== "object") return false;
+  if (!parsed.message || typeof parsed.message !== "string") return false;
+  if (!Array.isArray(parsed.suggestions)) return false;
+  for (const s of parsed.suggestions) {
+    if (!s.query || typeof s.query !== "string") return false;
   }
   return true;
 }
@@ -92,55 +78,58 @@ export async function chat(userMessage, recentHistory) {
 
   const prompt = `${SYSTEM_PROMPT}${historyBlock}\n\nUser: ${userMessage}`;
 
+  const MAX_ATTEMPTS = 3;
   let lastErr;
-  for (let attempt = 0; attempt < 3; attempt++) {
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
       const result = await model.generateContent(prompt);
       const text = result.response.text();
-      
-      // Clean and parse the response
       const cleaned = cleanJsonResponse(text);
-      
+
       let parsed;
       try {
         parsed = JSON.parse(cleaned);
       } catch (parseErr) {
-        console.error("JSON parse error:", parseErr.message);
-        console.error("Attempted to parse:", cleaned.substring(0, 200));
+        console.error(`[ai] JSON parse error (attempt ${attempt + 1}):`, parseErr.message);
         throw new Error("AI returned invalid JSON format");
       }
-      
-      // Validate the response structure
-      if (!validateResponse(parsed)) {
-        throw new Error("AI response missing required fields");
-      }
-      
+
+      if (!validateResponse(parsed)) throw new Error("AI response missing required fields");
       return parsed;
+
     } catch (err) {
       lastErr = err;
-      console.error(`Chat attempt ${attempt + 1} failed:`, err.message);
-      
-      // Retry on rate limit errors
-      if (err.message?.includes("429") && attempt < 2) {
-        await new Promise(r => setTimeout(r, 5000));
-        continue;
-      }
-      
-      // Don't retry on JSON parse errors after first attempt
-      if (err.message?.includes("JSON") && attempt > 0) {
-        break;
+      console.error(`[ai] chat attempt ${attempt + 1}/${MAX_ATTEMPTS} failed:`, err.message);
+
+      const isRateLimit = err.message?.includes("429") || err.message?.includes("quota");
+      const isJsonErr = err.message?.includes("JSON") || err.message?.includes("required fields");
+
+      if (attempt < MAX_ATTEMPTS - 1) {
+        if (isRateLimit) {
+          // Exponential backoff: 2s, 4s
+          const wait = 2000 * Math.pow(2, attempt);
+          console.error(`[ai] rate limited, waiting ${wait}ms before retry`);
+          await new Promise(r => setTimeout(r, wait));
+        } else if (isJsonErr) {
+          // One quick retry for JSON errors, then give up
+          if (attempt > 0) break;
+          await new Promise(r => setTimeout(r, 500));
+        } else {
+          break; // Non-retryable error
+        }
       }
     }
   }
-  
-  // Handle specific error types
-  if (lastErr?.message?.includes("429") || lastErr?.message?.includes("quota")) {
+
+  // Surface a user-friendly error
+  const msg = lastErr?.message || "";
+  if (msg.includes("429") || msg.includes("quota")) {
     throw new Error("Gemini API quota exceeded — try again later or enable billing at https://ai.google.dev");
   }
-  
-  if (lastErr?.message?.includes("JSON")) {
-    throw new Error("AI generated invalid response format. Please try rephrasing your request.");
+  if (msg.includes("JSON") || msg.includes("required fields")) {
+    throw new Error("AI generated an invalid response. Please try rephrasing your request.");
   }
-  
-  throw lastErr || new Error("Failed to get AI response after multiple attempts");
+  if (msg.includes("GEMINI_API_KEY")) throw lastErr;
+  throw new Error("Failed to get AI response. Please try again.");
 }
