@@ -38,8 +38,12 @@ function generateId() {
 }
 
 export function listPlaylists() {
-  return playlists.map(({ id, name, description, tracks, createdAt, updatedAt }) => ({
-    id, name, description, trackCount: tracks.length, createdAt, updatedAt
+  return playlists.map(({ id, name, description, tracks, coverUrl, createdAt, updatedAt }) => ({
+    id, name, description,
+    trackCount: tracks.length,
+    // coverUrl: first track thumbnail for quick display without fetching all tracks
+    coverUrl: coverUrl || tracks.find(t => t.thumbnail)?.thumbnail || null,
+    createdAt, updatedAt
   }));
 }
 

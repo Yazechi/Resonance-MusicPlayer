@@ -20,7 +20,7 @@ export function recordPlay(meta) {
   if (!meta?.title) return;
   // Avoid duplicate consecutive entries for the same song
   if (history[0]?.id && history[0].id === meta.id) return;
-  history.unshift({ title: meta.title, uploader: meta.uploader || "", id: meta.id || "", ts: Date.now() });
+  history.unshift({ title: meta.title, uploader: meta.uploader || "", id: meta.id || "", thumbnail: meta.thumbnail || "", ts: Date.now() });
   if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
   // Write async — don't block the response
   fs.writeFile(HISTORY_PATH, JSON.stringify(history, null, 2), () => {});

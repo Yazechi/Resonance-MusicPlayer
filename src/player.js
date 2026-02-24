@@ -450,7 +450,7 @@ export async function search(query, limit = 30) {
       if (!item.id || !item.title) return false;
       // Drop clips shorter than 30s (ads) or longer than 12 min (live sets / movies)
       const dur = item.durationSeconds;
-      if (dur != null && (dur < 30 || dur > 720)) return false;
+      if (dur != null && (dur < 20 || dur > 1800)) return false; // 20s min, 30min max
       return true;
     })
     .slice(0, limit);
@@ -524,14 +524,18 @@ function extractGenreKeywords(title) {
   return keywords;
 }
 
-// Apply audio filter / equalizer via mpv IPC. `afString` should be a mpv af spec
-// e.g. "equalizer=g=6" or "equalizer=f=250:g=-3:width_type=o:width=2"
+// Apply audio filter / equalizer via mpv IPC.
+// afString is an mpv af spec e.g. "bass=g=6", or "" to clear (Flat).
 export async function setEq(afString) {
-  if (!afString) throw new Error('afString required');
   try {
-    // mpv supports af operation via the IPC command: ["af", "add", "<spec>"]
-    await sendMpv({ command: ["af", "add", afString] });
-    return { status: state, af: afString };
+    if (!afString || afString.trim() === '') {
+      // Clear all filters
+      await sendMpv({ command: ["af", "clr", ""] });
+    } else {
+      // "af set" replaces the entire filter chain atomically
+      await sendMpv({ command: ["af", "set", afString] });
+    }
+    return { status: state, af: afString || '' };
   } catch (err) {
     throw new Error('Failed to apply EQ: ' + (err.message || err));
   }

@@ -121,6 +121,19 @@ app.post("/api/seek", async (req, res) => {
   }
 });
 
+app.post("/api/eq", async (req, res) => {
+  try {
+    const { filters } = req.body || {};
+    // filters is an mpv af string; empty string means Flat (clear)
+    const af = typeof filters === 'string' ? filters : '';
+    const result = await setEq(af);
+    res.json({ ok: true, result });
+  } catch (err) {
+    // EQ failures are non-fatal — player might not be running yet
+    res.json({ ok: true, result: { skipped: true, reason: err.message } });
+  }
+});
+
 app.get("/api/related", async (req, res) => {
   try {
     const { title, uploader, limit } = req.query;

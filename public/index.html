@@ -7,7 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js"></script>
     <style>
+      i.ph, i[class*="ph-"] { display:inline-flex; align-items:center; justify-content:center; }
       :root {
         --bg:        #0a0a0f;
         --surface:   #111118;
@@ -167,12 +169,12 @@
 
       /* ── Main content area ───────────────── */
       #main {
-        display: grid;
-        grid-template-columns: 1fr 300px;
-        gap: 0;
+        display: flex;
         height: calc(100vh - 57px);
         overflow: hidden;
       }
+      #leftPanel { flex: 1; min-width: 0; }
+      #sidebar { width: 300px; flex-shrink: 0; }
       @media (max-width: 900px) {
         #main { grid-template-columns: 1fr; }
         #sidebar { display: none; }
@@ -535,8 +537,8 @@
       .side-item:hover { background: var(--surface-2); }
       .side-item.active { background: var(--accent-dim); }
       .side-item img {
-        width: 48px; height: 28px;
-        object-fit: cover; border-radius: 3px;
+        width: 52px; height: 36px;
+        object-fit: cover; border-radius: var(--r-sm);
         background: var(--surface-3); flex-shrink: 0;
       }
       .side-item-info { flex: 1; min-width: 0; }
@@ -619,6 +621,24 @@
         background: transparent; border: none; border-bottom: 1px solid var(--accent);
         color: var(--text); font-size: 13px; font-weight: 600; outline: none;
         font-family: var(--sans); min-width: 0; flex: 1;
+      }
+
+      /* ── Playlist collage cover ──────────── */
+      .pl-collage {
+        width: 56px; height: 56px; border-radius: var(--r-sm);
+        flex-shrink: 0; overflow: hidden;
+        display: grid; grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr; gap: 1px;
+        background: var(--surface-3);
+      }
+      .pl-collage img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+      }
+      .pl-collage-ph {
+        width: 56px; height: 56px; border-radius: var(--r-sm);
+        background: var(--surface-3); flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--text-3);
       }
 
       /* ── Badge / tag ─────────────────────── */
@@ -747,43 +767,7 @@
       .flex { display: flex; gap: 6px; align-items: center; }
       .spacer { flex: 1; }
 
-      /* ── Toast notifications ──────────────── */
-      #toastShelf {
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        display: flex; flex-direction: column; gap: 6px; align-items: center;
-        z-index: 3000; pointer-events: none;
-      }
-      .toast {
-        background: var(--surface-3);
-        border: 1px solid var(--border-2);
-        border-radius: 999px;
-        padding: 7px 16px 7px 12px;
-        font-size: 12px; font-weight: 500;
-        display: flex; align-items: center; gap: 8px;
-        box-shadow: 0 4px 20px rgba(0,0,0,.55);
-        white-space: nowrap;
-        animation: toastIn .22s cubic-bezier(.34,1.56,.64,1) forwards;
-      }
-      .toast.out { animation: toastOut .18s ease forwards; }
-      .toast-icon { font-size: 14px; }
-      @keyframes toastIn  { from{opacity:0;transform:translateY(10px) scale(.94)} to{opacity:1;transform:none} }
-      @keyframes toastOut { to{opacity:0;transform:translateY(6px) scale(.95)} }
 
-      /* ── Lyrics panel ─────────────────────── */
-      #sideLyrics { display: none; }
-      #sideLyrics.active-panel { display: block; }
-      #lyricsWrap { padding: 4px 0; }
-      .lyric-line {
-        padding: 3px 6px; border-radius: 4px; font-size: 12px;
-        line-height: 1.7; color: var(--text-3); cursor: default;
-        transition: color .2s, background .2s;
-      }
-      .lyric-line.lyr-active {
-        color: var(--text); font-weight: 600;
-        background: var(--accent-dim);
-      }
-      .lyric-line.lyr-near { color: var(--text-2); }
-      #lyricsMsg { font-size: 11px; color: var(--text-3); font-style: italic; padding: 10px 4px; }
 
       /* ── EQ presets ───────────────────────── */
       #eqSection {
@@ -816,49 +800,6 @@
         padding: 0 3px; flex-shrink: 0; user-select: none;
       }
 
-      /* ── Search history dropdown ──────────── */
-      #searchHistDrop {
-        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-        background: var(--surface-3); border: 1px solid var(--border-2);
-        border-radius: var(--r); z-index: 300;
-        box-shadow: 0 8px 24px rgba(0,0,0,.5);
-        overflow: hidden; display: none;
-      }
-      #searchHistDrop.open { display: block; }
-      .sh-row {
-        display: flex; align-items: center; gap: 8px;
-        padding: 7px 10px; cursor: pointer; font-size: 12px;
-        transition: background 100ms;
-      }
-      .sh-row:hover { background: rgba(232,255,90,.06); }
-      .sh-icon { color: var(--text-3); font-size: 11px; flex-shrink: 0; }
-      .sh-text { flex: 1; }
-      .sh-del {
-        background: none; border: none; color: var(--text-3);
-        cursor: pointer; font-size: 11px; padding: 1px 4px;
-        opacity: 0; transition: opacity 100ms;
-      }
-      .sh-row:hover .sh-del { opacity: 1; }
-
-      /* ── Recently played strip ────────────── */
-      #recentStrip { margin-bottom: 14px; }
-      #recentStrip h3 {
-        font-family: var(--mono); font-size: 9px; font-weight: 700;
-        color: var(--text-3); text-transform: uppercase; letter-spacing: .07em;
-        margin-bottom: 8px;
-      }
-      #recentCards { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-      .rc-card {
-        flex-shrink: 0; width: 106px; border-radius: var(--r);
-        background: var(--surface-2); border: 1px solid var(--border);
-        overflow: hidden; cursor: pointer; transition: all 140ms;
-      }
-      .rc-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 5px 16px rgba(0,0,0,.4); }
-      .rc-card img { width: 100%; height: 60px; object-fit: cover; display: block; background: var(--surface-3); }
-      .rc-info { padding: 5px 7px 7px; }
-      .rc-title { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .rc-up    { font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
       /* ── Playlist cover art ───────────────── */
       .pl-cover {
         width: 40px; height: 40px; border-radius: var(--r-sm);
@@ -871,58 +812,47 @@
         font-size: 18px;
       }
 
-      /* ── Toast notifications ─────────────────── */
-      #toastContainer {
-        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-        z-index: 2000; display: flex; flex-direction: column; gap: 6px;
-        align-items: center; pointer-events: none;
-      }
-      .toast {
-        padding: 8px 16px; border-radius: 999px;
-        background: var(--surface-3); border: 1px solid var(--border-2);
-        font-size: 12px; color: var(--text); font-family: var(--sans);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        animation: toast-in 0.25s cubic-bezier(0.34,1.56,0.64,1);
-        white-space: nowrap;
-        display: flex; align-items: center; gap: 6px;
-      }
-      .toast.success { border-color: rgba(232,255,90,0.3); color: var(--accent); }
-      .toast.info    { border-color: rgba(0,212,177,0.3); color: var(--teal); }
-      .toast.error   { border-color: rgba(255,79,100,0.3); color: var(--red); }
-      .toast.fade-out { animation: toast-out 0.3s ease forwards; }
-      @keyframes toast-in  { from { opacity:0; transform:translateY(8px) scale(0.92); } to { opacity:1; transform:translateY(0) scale(1); } }
-      @keyframes toast-out { from { opacity:1; } to { opacity:0; transform:translateY(-6px); } }
 
-      /* ── Lyrics panel ───────────────────────── */
-      #lyricsPanel {
-        position: fixed; top: 57px; right: 316px; bottom: 0;
-        width: 300px; z-index: 90;
-        background: var(--surface);
-        border-left: 1px solid var(--border);
-        display: flex; flex-direction: column;
-        transform: translateX(100%);
-        opacity: 0;
-        transition: transform 280ms cubic-bezier(0.4,0,0.2,1), opacity 200ms;
-        pointer-events: none;
-      }
-      #lyricsPanel.open {
-        transform: translateX(0); opacity: 1; pointer-events: all;
-      }
-      #lyricsHead {
-        padding: 12px 14px; border-bottom: 1px solid var(--border);
-        display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-      }
-      #lyricsHead h3 { flex: 1; font-size: 12px; font-weight: 600; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
-      #lyricsBody {
-        flex: 1; overflow-y: auto; padding: 16px;
-        font-size: 13px; line-height: 1.8; color: var(--text-2);
-        white-space: pre-wrap;
-      }
-      #lyricsBody.loading { color: var(--text-3); font-style: italic; font-size: 12px; }
-      #lyricsBody.error   { color: var(--red); font-size: 11px; }
-      .lyrics-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-      .lyrics-artist { font-size: 11px; color: var(--text-3); margin-bottom: 16px; }
 
+
+
+      /* ── Sidebar Lyrics ───────────────────────── */
+      #sideLyrics {
+        padding: 0;
+        display: block;
+      }
+      #lyricsWrap {
+        padding: 8px 4px 16px;
+        font-size: 13px; line-height: 2;
+        color: var(--text-3);
+      }
+      #lyricsMsg {
+        text-align: center; padding: 32px 0;
+        color: var(--text-3); font-size: 12px; font-style: italic;
+      }
+      .lyrics-meta { padding: 4px 8px 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+      .lyrics-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+      .lyrics-artist { font-size: 11px; color: var(--text-3); }
+      .lyric-line {
+        display: block; padding: 3px 8px;
+        border-radius: var(--r-sm);
+        transition: color 200ms, background 200ms, transform 200ms;
+        cursor: default; font-size: 13px;
+        color: var(--text-3);
+      }
+      .lyric-line.lyr-active {
+        color: var(--text);
+        font-weight: 600;
+        background: var(--accent-dim);
+        transform: translateX(4px);
+      }
+      .lyric-line.lyr-near {
+        color: var(--text-2);
+      }
+      .plain-lyrics {
+        white-space: pre-wrap; font-size: 12px; line-height: 1.8;
+        padding: 0 8px; color: var(--text-2);
+      }
       /* ── Recently played strip ──────────────── */
       #recentStrip {
         margin-bottom: 16px;
@@ -939,23 +869,23 @@
       }
       #recentCards::-webkit-scrollbar { height: 3px; }
       .recent-card {
-        flex-shrink: 0; width: 108px; cursor: pointer;
+        flex-shrink: 0; width: 150px; cursor: pointer;
         border-radius: var(--r); overflow: hidden;
         background: var(--surface-2); border: 1px solid var(--border);
-        transition: border-color 150ms, transform 120ms;
+        transition: border-color 150ms, transform 120ms, box-shadow 120ms;
       }
-      .recent-card:hover { border-color: var(--border-2); transform: translateY(-2px); }
+      .recent-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
       .recent-card img {
-        width: 108px; height: 60px; object-fit: cover; display: block;
+        width: 150px; height: 84px; object-fit: cover; display: block;
         background: var(--surface-3);
       }
-      .recent-card-info { padding: 6px 8px 8px; }
+      .recent-card-info { padding: 8px 10px 10px; }
       .recent-card-title {
-        font-size: 11px; font-weight: 500;
+        font-size: 12px; font-weight: 600;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         line-height: 1.3;
       }
-      .recent-card-up { font-size: 10px; color: var(--text-3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .recent-card-up { font-size: 10px; color: var(--text-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
       /* ── Search history dropdown ────────────── */
       #searchHistoryDrop {
@@ -977,43 +907,9 @@
       .sh-item-del { color: var(--text-3); font-size: 11px; padding: 2px 4px; border: none; background: none; cursor: pointer; }
       .sh-item-del:hover { color: var(--red); }
 
-      /* ── Equalizer panel ────────────────────── */
-      #eqPanel {
-        position: absolute; top: calc(100% + 6px); right: 0;
-        background: var(--surface-3); border: 1px solid var(--border-2);
-        border-radius: var(--r); z-index: 300; padding: 8px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-        min-width: 160px;
-        display: none;
-      }
-      #eqPanel.open { display: block; }
-      .eq-preset {
-        display: flex; align-items: center; gap: 8px;
-        padding: 7px 10px; border-radius: var(--r-sm);
-        cursor: pointer; font-size: 12px; transition: background 100ms;
-        border: none; background: none; color: var(--text); width: 100%;
-        text-align: left; font-family: var(--sans);
-      }
-      .eq-preset:hover { background: rgba(255,255,255,0.06); }
-      .eq-preset.active { color: var(--accent); background: var(--accent-dim); }
-      .eq-preset .eq-icon { font-size: 14px; }
-      .eq-label { font-family: var(--mono); font-size: 9px; color: var(--text-3); padding: 4px 10px 2px; text-transform: uppercase; letter-spacing: 0.08em; }
-
       /* ── Queue drag-and-drop ─────────────────── */
       .side-item.dragging { opacity: 0.45; }
       .side-item.drag-over { border-top: 2px solid var(--accent); }
-
-      /* ── Playlist cover art ─────────────────── */
-      .pl-cover {
-        width: 44px; height: 44px; border-radius: var(--r-sm);
-        object-fit: cover; background: var(--surface-3); flex-shrink: 0;
-      }
-      .pl-cover-placeholder {
-        width: 44px; height: 44px; border-radius: var(--r-sm);
-        background: var(--surface-3); flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 18px; color: var(--text-3);
-      }
 
       /* ── Keyboard shortcut hint ─────────────── */
       #kbHint {
@@ -1026,23 +922,57 @@
       }
       #kbHint.visible { opacity: 1; }
 
-      /* EQ btn in now-playing */
-      #eqWrap { position: relative; display: inline-block; }
+
+      /* ── Toast notifications (floating, no layout impact) ── */
+      #toastContainer {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .toast {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-family: var(--sans);
+        font-weight: 500;
+        color: var(--text);
+        background: var(--surface-3);
+        border: 1px solid var(--border-2);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        pointer-events: auto;
+        white-space: nowrap;
+        animation: toast-rise 300ms cubic-bezier(0.34,1.56,0.64,1) forwards;
+      }
+      .toast.success { border-color: rgba(100,220,130,0.35); color: #6ddc82; }
+      .toast.error   { border-color: rgba(255,79,100,0.35);  color: var(--red); }
+      .toast.info    { border-color: var(--border-2); color: var(--text-2); }
+      .toast-icon    { font-size: 13px; flex-shrink: 0; }
+      .toast.fade-out {
+        animation: toast-fade 500ms ease forwards;
+      }
+      @keyframes toast-rise {
+        from { opacity: 0; transform: translateY(12px) scale(0.92); }
+        to   { opacity: 1; transform: translateY(0)    scale(1);    }
+      }
+      @keyframes toast-fade {
+        0%   { opacity: 1; transform: translateY(0)    scale(1);    }
+        100% { opacity: 0; transform: translateY(-8px) scale(0.95); }
+      }
     </style>
   </head>
   <body>
     <!-- Toast container -->
     <div id="toastContainer"></div>
-
-    <!-- Lyrics panel (slides in from right) -->
-    <div id="lyricsPanel">
-      <div id="lyricsHead">
-        <span style="font-size:14px">🎤</span>
-        <h3>Lyrics</h3>
-        <button id="lyricsClose" class="btn-icon" title="Close">✕</button>
-      </div>
-      <div id="lyricsBody" class="loading">Play a song to see lyrics…</div>
-    </div>
 
     <!-- Keyboard shortcut flash -->
     <div id="kbHint"></div>
@@ -1053,10 +983,9 @@
         <div id="logo">RESONANCE</div>
         <div id="searchBar">
           <input id="searchInput" type="text" placeholder="Search songs, artists…" autocomplete="off" />
-          <button id="searchClear">✕</button>
+          <button id="searchClear"><i class="ph ph-x"></i></button>
           <div id="searchHistoryDrop"></div>
           <div id="searchSpinner"><span class="spinner-sm"></span></div>
-          <div id="searchHistDrop"></div>
         </div>
         <div id="topBarRight">
           <div id="tabNav">
@@ -1120,13 +1049,13 @@
             </div>
 
             <div class="ctrl-row">
-              <button class="btn-ctrl secondary" id="prevBtn" title="Previous">⏮</button>
-              <button class="btn-ctrl secondary" id="stopBtn" title="Stop">⏹</button>
-              <button class="btn-ctrl play-pause" id="playPauseBtn" title="Play / Pause">▶</button>
-              <button class="btn-ctrl secondary" id="nextBtn" title="Next">⏭</button>
+              <button class="btn-ctrl secondary" id="prevBtn" title="Previous"><i class="ph ph-skip-back"></i></button>
+              <button class="btn-ctrl secondary" id="stopBtn" title="Stop"><i class="ph ph-stop"></i></button>
+              <button class="btn-ctrl play-pause" id="playPauseBtn" title="Play / Pause"><i class="ph ph-play"></i></button>
+              <button class="btn-ctrl secondary" id="nextBtn" title="Next"><i class="ph ph-skip-forward"></i></button>
             </div>
             <div class="vol-row">
-              <span>🔊</span>
+              <i class="ph ph-speaker-high" style="color:var(--text-3);font-size:14px"></i>
               <input type="range" id="volume" min="0" max="100" value="70" />
               <span id="volNum" style="font-family:var(--mono);font-size:10px;color:var(--text-3);min-width:24px;text-align:right;">70</span>
             </div>
@@ -1136,32 +1065,18 @@
               <div id="eqBtns"></div>
             </div>
             <div id="controlError"></div>
-            <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
-              <div id="eqWrap">
-                <button id="eqToggle" class="btn btn-ghost btn-sm" title="Equalizer">🎚 EQ</button>
-                <div id="eqPanel">
-                  <div class="eq-label">Presets</div>
-                  <button class="eq-preset active" data-preset="flat"><span class="eq-icon">⚖️</span> Flat</button>
-                  <button class="eq-preset" data-preset="bass_boost"><span class="eq-icon">🔊</span> Bass Boost</button>
-                  <button class="eq-preset" data-preset="vocal"><span class="eq-icon">🎤</span> Vocal</button>
-                  <button class="eq-preset" data-preset="treble"><span class="eq-icon">✨</span> Treble</button>
-                  <button class="eq-preset" data-preset="loud"><span class="eq-icon">🔥</span> Loud</button>
-                </div>
-              </div>
-              <button id="lyricsToggle" class="btn btn-ghost btn-sm" title="Show lyrics">🎵 Lyrics</button>
-            </div>
           </div>
 
           <!-- Sidebar tabs -->
           <div id="sidebarTabs">
             <button class="stab active" data-stab="recs">Related</button>
-            <button class="stab" data-stab="lyrics">Lyrics</button>
+            <button class="stab" data-stab="lyrics" id="lyricsTab">Lyrics</button>
             <button class="stab" data-stab="queue">Queue</button>
             <button class="stab" data-stab="history">History</button>
           </div>
           <div id="sidebarContent">
             <div id="sideRecs"></div>
-            <div id="sideLyrics"><div id="lyricsWrap"><div id="lyricsMsg">Play a song to see lyrics.</div></div></div>
+            <div id="sideLyrics" class="hidden"><div id="lyricsWrap"><div id="lyricsMsg">Play a song to see lyrics.</div></div></div>
             <div id="sideQueue" class="hidden"></div>
             <div id="sideHistory" class="hidden"></div>
           </div>
@@ -1171,16 +1086,15 @@
 
 
     <!-- AI CHAT -->
-    <div id="toastShelf"></div>
-    <button id="chatToggle" title="Ask Resonance AI">✨</button>
+    <button id="chatToggle" title="Ask Resonance AI"><i class="ph ph-sparkle"></i></button>
     <div id="chatPanel">
       <div id="chatHead">
-        <span style="font-size:15px">🎵</span>
+        <i class="ph ph-music-notes" style="font-size:16px"></i>
         <h3>Resonance AI</h3>
         <span class="teal">Gemini</span>
       </div>
       <div id="chatMsgs">
-        <div class="msg ai">Hi! Tell me what mood you're in and I'll find the perfect music. 🎶</div>
+        <div class="msg ai">Hi! Tell me what mood you're in and I'll find the perfect music.</div>
       </div>
       <div id="chatInputRow">
         <input id="chatInput" type="text" placeholder="e.g. chill lo-fi for studying" />
@@ -1190,24 +1104,16 @@
 
     <script>
     /* =====================================================================
-       RESONANCE — Optimised frontend
-       Changes from original:
-       - Optimistic UI: show results / player instantly, load in bg
-       - Debounced status polling (1s when playing, 3s when idle/paused)
-       - Progress bar via CSS width (no input DOM thrashing)
-       - rAF tick only redraws when values actually change
-       - Sidebar tabs (Related / Queue / History) replace scattered panels
-       - Single-pass DOM render helpers (no innerHTML string-concat loops)
-       - Batch DOM writes with requestAnimationFrame
-       - Event delegation for result rows
-       - Image lazy loading
+       RESONANCE — Unified Frontend Script
+       Features: Lyrics (lrclib + lyrics.ovh), Keyboard Shortcuts,
+       Recently Played Strip, Toast Notifications, Queue Reordering,
+       Search History, Playlist Cover Art, Equalizer Presets
     ===================================================================== */
 
     /* ── Utilities ─────────────────────────────── */
     const esc = t => String(t??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
     const fmt = s => { s=Math.max(0,s|0); return `${(s/60|0)}:${String(s%60).padStart(2,'0')}`; };
     const el = id => document.getElementById(id);
-    const cls = (...c) => c.filter(Boolean).join(' ');
 
     async function api(path, opts={}) {
       const r = await fetch(path, { ...opts, headers: {'Content-Type':'application/json', ...(opts.headers||{})} });
@@ -1217,8 +1123,7 @@
     }
 
     /* ── State ────────────────────────────────── */
-    let results = [];
-    let page = 0; // kept for compat but unused
+    let results = [], page = 0;
     let lastStatus = 'idle';
     let lastPos = 0, lastDur = 0, lastUpdateTs = Date.now();
     let isSeeking = false;
@@ -1226,157 +1131,214 @@
     let currentTitle = '', currentUploader = '', currentThumb = '';
     let playlists = [];
     let expandedPl = null;
-    let playing = false;
 
-    // Queues
     let generalQueue = [], gqIdx = 0, gqActive = false;
-
-    // Recs cache/pagination
     let allRecs = [], recsIdx = 0;
     const RECS_BATCH = 10;
-
-    // Adaptive polling
     let pollInterval = null;
-    let prevPollStatus = null;
 
     /* ── localStorage helpers ──────────────────── */
     const lsGet = (k,d=null) => { try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch{return d;} };
     const lsSet = (k,v) => { try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} };
 
-    /* ── Toast ─────────────────────────────────── */
-    function toast(msg, icon='🎵', dur=2800) {
-      const shelf = el('toastShelf');
-      const t = document.createElement('div'); t.className='toast';
-      t.innerHTML = `<span class="toast-icon">${icon}</span><span>${esc(msg)}</span>`;
-      shelf.appendChild(t);
-      setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(), 200); }, dur);
+    /* ════════════════════════════════════════════
+       FEATURE 1: TOAST NOTIFICATIONS
+    ════════════════════════════════════════════ */
+    function toast(msg, type='info', duration=2400) {
+      const shelf = el('toastContainer');
+      // Limit to 3 visible toasts — remove oldest if exceeded
+      const existing = shelf.querySelectorAll('.toast:not(.fade-out)');
+      if (existing.length >= 3) existing[existing.length - 1].remove();
+
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      const icons = { success:'<i class="ph ph-check"></i>', info:'<i class="ph ph-music-note"></i>', error:'<i class="ph ph-warning"></i>', warning:'<i class="ph ph-warning"></i>' };
+      t.innerHTML = `<span class="toast-icon">${icons[type]||''}</span><span>${esc(msg)}</span>`;
+      shelf.prepend(t);
+
+      // Dismiss on click
+      t.addEventListener('click', () => dismiss(t));
+
+      function dismiss(el) {
+        if (el._dismissing) return;
+        el._dismissing = true;
+        el.classList.add('fade-out');
+        setTimeout(() => { if (el.parentNode) el.remove(); }, 520);
+      }
+      setTimeout(() => dismiss(t), duration);
     }
 
-    /* ── Search history (localStorage) ────────── */
-    let searchHistory = lsGet('rq_sh', []);
+    /* ════════════════════════════════════════════
+       FEATURE 2: SEARCH HISTORY
+    ════════════════════════════════════════════ */
+    let searchHistory = lsGet('rq_search_history', []);
 
     function shAdd(q) {
-      searchHistory = [q, ...searchHistory.filter(x=>x!==q)].slice(0,12);
-      lsSet('rq_sh', searchHistory);
+      searchHistory = [q, ...searchHistory.filter(x=>x!==q)].slice(0, 12);
+      lsSet('rq_search_history', searchHistory);
     }
     function shRemove(q) {
       searchHistory = searchHistory.filter(x=>x!==q);
-      lsSet('rq_sh', searchHistory);
-      renderShDrop();
+      lsSet('rq_search_history', searchHistory);
+      renderShDrop(el('searchInput').value.trim());
     }
-    function renderShDrop() {
-      const drop = el('searchHistDrop');
-      if (!searchHistory.length) { drop.classList.remove('open'); drop.innerHTML=''; return; }
-      drop.innerHTML='';
-      searchHistory.forEach(q => {
-        const row = document.createElement('div'); row.className='sh-row';
-        const ico = document.createElement('span'); ico.className='sh-icon'; ico.textContent='🕐';
-        const txt = document.createElement('span'); txt.className='sh-text'; txt.textContent=q;
-        const del = document.createElement('button'); del.className='sh-del'; del.textContent='✕'; del.title='Remove';
+    function renderShDrop(filter='') {
+      const drop = el('searchHistoryDrop');
+      const items = filter
+        ? searchHistory.filter(s=>s.toLowerCase().includes(filter.toLowerCase()))
+        : searchHistory;
+      if (!items.length) { drop.classList.remove('visible'); drop.innerHTML=''; return; }
+      drop.innerHTML = '';
+      const header = document.createElement('div');
+      header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 12px 2px;';
+      header.innerHTML = '<span style="font-size:10px;color:var(--text-3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em">Recent</span>';
+      const clearAll = document.createElement('button');
+      clearAll.style.cssText = 'font-size:10px;background:none;border:none;color:var(--text-3);cursor:pointer;';
+      clearAll.textContent = 'Clear all';
+      clearAll.addEventListener('click', e=>{
+        e.stopPropagation();
+        searchHistory = []; lsSet('rq_search_history', []);
+        drop.classList.remove('visible'); drop.innerHTML='';
+      });
+      header.appendChild(clearAll);
+      drop.appendChild(header);
+      items.slice(0, 8).forEach(q => {
+        const row = document.createElement('div'); row.className='sh-item';
+        const icon = document.createElement('i'); icon.className='ph ph-clock sh-item-icon';
+        const text = document.createElement('span'); text.className='sh-item-text'; text.textContent=q;
+        const del = document.createElement('button'); del.className='sh-item-del'; del.title='Remove'; del.innerHTML='<i class="ph ph-x"></i>';
         del.addEventListener('click', e=>{ e.stopPropagation(); shRemove(q); });
-        txt.addEventListener('click', ()=>{ el('searchInput').value=q; drop.classList.remove('open'); doSearch(); });
-        row.append(ico, txt, del);
+        row.append(icon, text, del);
+        row.addEventListener('click', ()=>{
+          el('searchInput').value = q;
+          drop.classList.remove('visible');
+          clearTimeout(searchDebounce);
+          doSearch();
+        });
         drop.appendChild(row);
       });
-      drop.classList.add('open');
+      drop.classList.add('visible');
     }
     el('searchInput').addEventListener('focus', ()=>{
-      if (!el('searchInput').value.trim() && searchHistory.length) renderShDrop();
+      if (!el('searchInput').value.trim() && searchHistory.length) renderShDrop('');
     });
     document.addEventListener('click', e=>{
-      if (!el('searchBar').contains(e.target)) el('searchHistDrop').classList.remove('open');
+      if (!el('searchBar').contains(e.target)) el('searchHistoryDrop').classList.remove('visible');
     });
 
-    /* ── Recently Played (localStorage) ───────── */
-    let recentlyPlayed = lsGet('rq_recent', []); // [{id,title,uploader,thumbnail}]
+    /* ════════════════════════════════════════════
+       FEATURE 3: RECENTLY PLAYED STRIP
+    ════════════════════════════════════════════ */
+    let recentlyPlayed = lsGet('rq_recent', []);
 
     function rpAdd(item) {
       if (!item?.id) return;
-      recentlyPlayed = [{id:item.id,title:item.title||'',uploader:item.uploader||'',thumbnail:item.thumbnail||''},
-        ...recentlyPlayed.filter(x=>x.id!==item.id)].slice(0,20);
+      recentlyPlayed = [
+        {id:item.id,title:item.title||'',uploader:item.uploader||'',thumbnail:item.thumbnail||''},
+        ...recentlyPlayed.filter(x=>x.id!==item.id)
+      ].slice(0, 20);
       lsSet('rq_recent', recentlyPlayed);
     }
+
     function renderRecentStrip() {
       const strip = el('recentStrip');
-      if (!recentlyPlayed.length || el('searchInput').value.trim()) { strip.style.display='none'; return; }
-      strip.style.display='block';
+      const q = el('searchInput').value.trim();
+      if (!recentlyPlayed.length || q) { strip.style.display='none'; return; }
+      strip.style.display = 'block';
       const cards = el('recentCards');
-      cards.innerHTML='';
-      recentlyPlayed.slice(0,12).forEach(item=>{
-        const c = document.createElement('div'); c.className='rc-card';
+      cards.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      recentlyPlayed.slice(0, 12).forEach(item => {
+        const c = document.createElement('div'); c.className='recent-card'; c.title=item.title;
         const img = document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt='';
-        const info = document.createElement('div'); info.className='rc-info';
-        const tt = document.createElement('div'); tt.className='rc-title'; tt.textContent=item.title;
-        const up = document.createElement('div'); up.className='rc-up'; up.textContent=item.uploader;
-        info.append(tt,up); c.append(img,info);
-        c.addEventListener('click',()=>handlePlay(item.id,item));
-        cards.appendChild(c);
+        img.width=150; img.height=84;
+        const info = document.createElement('div'); info.className='recent-card-info';
+        const tt = document.createElement('div'); tt.className='recent-card-title'; tt.textContent=item.title;
+        const up = document.createElement('div'); up.className='recent-card-up'; up.textContent=item.uploader;
+        info.append(tt, up); c.append(img, info);
+        c.addEventListener('click', ()=>handlePlay(item.id, item));
+        frag.appendChild(c);
       });
+      cards.appendChild(frag);
     }
 
-    /* ── Keyboard shortcuts ────────────────────── */
-    document.addEventListener('keydown', e=>{
+    /* ════════════════════════════════════════════
+       FEATURE 4: KEYBOARD SHORTCUTS
+    ════════════════════════════════════════════ */
+    let kbHintTimer = null;
+    function flashKbHint(msg) {
+      const h = el('kbHint'); h.textContent = msg; h.classList.add('visible');
+      clearTimeout(kbHintTimer);
+      kbHintTimer = setTimeout(()=>h.classList.remove('visible'), 1400);
+    }
+    document.addEventListener('keydown', e => {
       const tag = document.activeElement?.tagName?.toLowerCase();
-      if (tag==='input'||tag==='textarea') return; // don't steal focus from typing
-      switch(e.key){
+      if (tag==='input'||tag==='textarea') return;
+      if (e.ctrlKey||e.metaKey||e.altKey) return;
+      switch(e.key) {
         case ' ':
           e.preventDefault();
-          if(lastStatus==='playing'){ lastStatus='paused'; playPauseBtn.innerHTML='▶'; postCtrl('/api/pause'); }
-          else{ lastStatus='playing'; playPauseBtn.innerHTML='⏸'; postCtrl('/api/resume'); }
+          playPauseBtn.click();
+          flashKbHint(lastStatus==='playing' ? '⏸ Pause' : '▶ Play');
           break;
         case 'ArrowRight':
           e.preventDefault();
-          { const pos = Math.min((lastPos||0)+10, lastDur||999);
-            api('/api/seek',{method:'POST',body:JSON.stringify({position:pos})}).catch(()=>{});
-            lastPos=pos; lastUpdateTs=Date.now(); toast('+10s','⏩',1000); }
+          { const p = Math.min(lastPos+10, lastDur||9999);
+            api('/api/seek',{method:'POST',body:JSON.stringify({position:p})}).catch(()=>{});
+            lastPos=p; lastUpdateTs=Date.now(); flashKbHint('+10s'); }
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          { const pos = Math.max((lastPos||0)-10, 0);
-            api('/api/seek',{method:'POST',body:JSON.stringify({position:pos})}).catch(()=>{});
-            lastPos=pos; lastUpdateTs=Date.now(); toast('-10s','⏪',1000); }
+          { const p = Math.max(lastPos-10, 0);
+            api('/api/seek',{method:'POST',body:JSON.stringify({position:p})}).catch(()=>{});
+            lastPos=p; lastUpdateTs=Date.now(); flashKbHint('-10s'); }
           break;
         case 'ArrowUp':
           e.preventDefault();
-          { const v=Math.min(100,Number(el('volume').value)+5); el('volume').value=v; el('volNum').textContent=v;
-            api('/api/volume',{method:'POST',body:JSON.stringify({level:v})}).catch(()=>{}); toast(`Vol ${v}%`,'🔊',900); }
+          { const v=Math.min(100, Number(el('volume').value)+5); el('volume').value=v; el('volNum').textContent=v;
+            api('/api/volume',{method:'POST',body:JSON.stringify({level:v})}).catch(()=>{});
+            flashKbHint(`Vol ${v}%`); }
           break;
         case 'ArrowDown':
           e.preventDefault();
-          { const v=Math.max(0,Number(el('volume').value)-5); el('volume').value=v; el('volNum').textContent=v;
-            api('/api/volume',{method:'POST',body:JSON.stringify({level:v})}).catch(()=>{}); toast(`Vol ${v}%`,'🔉',900); }
+          { const v=Math.max(0, Number(el('volume').value)-5); el('volume').value=v; el('volNum').textContent=v;
+            api('/api/volume',{method:'POST',body:JSON.stringify({level:v})}).catch(()=>{});
+            flashKbHint(`Vol ${v}%`); }
           break;
-        case 'n': case 'N':
-          el('nextBtn').click(); break;
-        case 'p': case 'P':
-          el('prevBtn').click(); break;
+        case 'n': case 'N': el('nextBtn').click(); flashKbHint('Next'); break;
+        case 'p': case 'P': el('prevBtn').click(); flashKbHint('Prev'); break;
+        case 's': case 'S': el('stopBtn').click(); flashKbHint('Stop'); break;
+        case 'l': case 'L': el('lyricsTab').click(); flashKbHint('Lyrics'); break;
         case 'm': case 'M':
-          { const cur=Number(el('volume').value); const nv=cur>0?0:70;
+          { const cur = Number(el('volume').value); const nv = cur>0?0:70;
             el('volume').value=nv; el('volNum').textContent=nv;
             api('/api/volume',{method:'POST',body:JSON.stringify({level:nv})}).catch(()=>{});
-            toast(nv===0?'Muted':'Unmuted',nv===0?'🔇':'🔊',900); }
+            flashKbHint(nv===0?'Muted':'Unmuted'); }
           break;
+        case '/': e.preventDefault(); el('searchInput').focus(); flashKbHint('Search'); break;
       }
     });
 
-    /* ── EQ Presets ────────────────────────────── */
+    /* ════════════════════════════════════════════
+       FEATURE 5: EQUALIZER PRESETS
+    ════════════════════════════════════════════ */
     const EQ_PRESETS = [
-      { name:'Flat',    af:'' },
-      { name:'Bass+',   af:'bass=g=6' },
-      { name:'Treble+', af:'treble=g=5' },
-      { name:'Vocal',   af:'equalizer=f=250:g=-3:width_type=o:width=2,equalizer=f=3500:g=4:width_type=o:width=2' },
-      { name:'Lo-Fi',   af:'lowpass=f=3000,aecho=0.8:0.88:60:0.4' },
-      { name:'Night',   af:'bass=g=4,treble=g=-3,volume=0.75' },
+      { name:'Flat',    icon:'ph-equalizer', af:'' },
+      { name:'Bass+',   icon:'ph-waveform', af:'lavfi=[bass=g=6:f=110:w=0.6]' },
+      { name:'Treble+', icon:'ph-trend-up', af:'lavfi=[treble=g=5:f=3000:w=0.6]' },
+      { name:'Vocal',   icon:'ph-microphone', af:'lavfi=[equalizer=f=300:g=-3:w=200,equalizer=f=3500:g=4:w=2000]' },
+      { name:'Lo-Fi',   icon:'ph-radio', af:'lavfi=[lowpass=f=3000,volume=0.9]' },
+      { name:'Night',   icon:'ph-moon', af:'lavfi=[bass=g=4:f=110,treble=g=-3:f=3000,volume=0.8]' },
     ];
-    let activeEq = lsGet('rq_eq','Flat');
+    let activeEq = lsGet('rq_eq', 'Flat');
 
     function buildEqButtons() {
       const wrap = el('eqBtns'); wrap.innerHTML='';
-      EQ_PRESETS.forEach(p=>{
+      EQ_PRESETS.forEach(p => {
         const b = document.createElement('button');
-        b.className = 'eq-btn'+(activeEq===p.name?' active':'');
-        b.textContent = p.name;
-        b.addEventListener('click',()=>applyEq(p));
+        b.className = 'eq-btn' + (activeEq===p.name?' active':''); b.dataset.name=p.name;
+        b.innerHTML = `<i class="ph ${p.icon}" style="font-size:12px"></i> ${p.name}`;
+        b.addEventListener('click', ()=>applyEq(p));
         wrap.appendChild(b);
       });
       el('eqLabel').textContent = activeEq;
@@ -1384,90 +1346,181 @@
     async function applyEq(preset) {
       activeEq = preset.name; lsSet('rq_eq', preset.name);
       el('eqLabel').textContent = preset.name;
-      document.querySelectorAll('.eq-btn').forEach(b=>b.classList.toggle('active', b.textContent===preset.name));
-      try { await api('/api/eq',{method:'POST',body:JSON.stringify({filters:preset.af})}); }
-      catch { /* endpoint optional — silently skip */ }
-      toast(`EQ: ${preset.name}`, '🎚️');
+      document.querySelectorAll('.eq-btn').forEach(b=>b.classList.toggle('active', b.dataset.name===preset.name));
+      try { await api('/api/eq',{method:'POST',body:JSON.stringify({filters:preset.af})}); } catch {}
+      toast(`EQ: ${preset.name}`, 'info');
+    }
+    buildEqButtons();
+
+    /* ════════════════════════════════════════════
+       FEATURE 6: LYRICS PANEL (lrclib + lyrics.ovh)
+    ════════════════════════════════════════════ */
+    // ── Lyrics state ─────────────────────────────────────────────
+    let syncedLines = [], lastLyrIdx = -1;
+    let lyricsLoadedForId = null;   // track id lyrics were fetched for
+    let lyricsLoadedAtPos = 0;      // song position when lyrics finished loading
+
+    function cleanLyricsText(t) {
+      return t.replace(/\(official.*?\)/gi,'').replace(/\[.*?\]/g,'')
+              .replace(/official\s*(video|audio|lyric|music video)/gi,'')
+              .replace(/\s+/g,' ').trim();
     }
 
-    /* ── Lyrics ────────────────────────────────── */
-    let lyricsLines = [], lyricsFor = '', lastLyrIdx = -1;
+    // Called whenever user clicks the Lyrics tab OR L key
+    function openLyrics() {
+      document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));
+      const lt = el('lyricsTab'); if(lt) lt.classList.add('active');
+      el('sideRecs').classList.add('hidden');
+      el('sideLyrics').classList.remove('hidden');
+      el('sideQueue').classList.add('hidden');
+      el('sideHistory').classList.add('hidden');
 
-    async function fetchLyrics(title, uploader) {
-      const key = title+'||'+uploader;
-      if (lyricsFor===key) return;
-      lyricsFor=key; lyricsLines=[]; lastLyrIdx=-1;
-      el('lyricsWrap').innerHTML='<div id="lyricsMsg">Loading lyrics…</div>';
+      // Only re-fetch if song changed
+      if (playingId && playingId !== lyricsLoadedForId) {
+        loadLyrics(currentTitle, currentUploader, playingId);
+      }
+    }
+
+    async function loadLyrics(title, artist, trackId) {
+      lyricsLoadedForId = trackId;
+      syncedLines = []; lastLyrIdx = -1;
+      const wrap = el('lyricsWrap');
+      wrap.innerHTML = '<div id="lyricsMsg">Searching for lyrics…</div>';
+
+      const ct = cleanLyricsText(title);
+      const ca = artist.replace(/\s*-\s*Topic$/, '').trim();
+
+      // Try lrclib first (has synced lyrics)
       try {
-        const q=encodeURIComponent(title), ar=encodeURIComponent(uploader||'');
-        const r=await fetch(`https://lrclib.net/api/search?q=${q}&artist_name=${ar}`);
-        if (!r.ok) throw new Error('no results');
-        const data=await r.json();
-        if (!Array.isArray(data)||!data.length) throw new Error('no results');
-        const track = data.find(t=>t.syncedLyrics)||data[0];
-        if (track.syncedLyrics) {
-          lyricsLines = track.syncedLyrics.split('\n').map(l=>{
-            const m=l.match(/^\[(\d+):(\d+\.\d+)\](.*)/);
-            return m ? {t:parseInt(m[1])*60+parseFloat(m[2]), text:m[3].trim()} : null;
-          }).filter(Boolean);
-          renderSyncedLyrics();
-        } else if (track.plainLyrics) {
-          renderPlainLyrics(track.plainLyrics);
-        } else throw new Error('no lyrics');
-      } catch {
-        el('lyricsWrap').innerHTML='<div id="lyricsMsg">No lyrics found.</div>';
-      }
+        const r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(ct)}&artist_name=${encodeURIComponent(ca)}`);
+        if (r.ok) {
+          const data = await r.json();
+          if (Array.isArray(data) && data.length) {
+            const track = data.find(t=>t.syncedLyrics) || data[0];
+            if (track.syncedLyrics) {
+              syncedLines = track.syncedLyrics.split('\n').map(l=>{
+                const m = l.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)/);
+                return m ? {t: parseInt(m[1])*60 + parseFloat(m[2]), text: m[3].trim()} : null;
+              }).filter(Boolean);
+              if (syncedLines.length) {
+                // Record the song position at load-complete time for sync offset
+                lyricsLoadedAtPos = lastPos + (Date.now()-lastUpdateTs)/1000;
+                renderSyncedLyrics(ct, ca);
+                return;
+              }
+            }
+            if (track.plainLyrics) {
+              renderPlainLyrics(ct, ca, track.plainLyrics);
+              return;
+            }
+          }
+        }
+      } catch {}
+
+      // Try server proxy (lrclib + lyrics.ovh)
+      try {
+        const r = await fetch(`/api/lyrics?artist=${encodeURIComponent(ca)}&title=${encodeURIComponent(ct)}`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d.ok && d.lyrics) { renderPlainLyrics(ct, ca, d.lyrics); return; }
+        }
+      } catch {}
+
+      // Final fallback: lyrics.ovh
+      try {
+        const r2 = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(ca)}/${encodeURIComponent(ct)}`);
+        if (r2.ok) {
+          const d2 = await r2.json();
+          if (d2.lyrics) { renderPlainLyrics(ct, ca, d2.lyrics); return; }
+        }
+      } catch {}
+
+      wrap.innerHTML = '<div id="lyricsMsg">No lyrics found for this track.</div>';
     }
 
-    function renderSyncedLyrics() {
-      el('lyricsWrap').innerHTML='';
-      lyricsLines.forEach((l,i)=>{
-        const d=document.createElement('div'); d.className='lyric-line'; d.dataset.li=i;
-        d.textContent=l.text||'♪';
-        el('lyricsWrap').appendChild(d);
-      });
+    function renderPlainLyrics(title, artist, text) {
+      const wrap = el('lyricsWrap');
+      wrap.innerHTML = `
+        <div class="lyrics-meta">
+          <div class="lyrics-title">${esc(title)}</div>
+          <div class="lyrics-artist">${esc(artist)}</div>
+        </div>
+        <div class="plain-lyrics">${esc(text)}</div>`;
     }
-    function renderPlainLyrics(text) {
-      el('lyricsWrap').innerHTML='';
-      text.split('\n').forEach(line=>{
-        const d=document.createElement('div'); d.className='lyric-line'; d.textContent=line||' ';
-        el('lyricsWrap').appendChild(d);
+
+    function renderSyncedLyrics(title, artist) {
+      const wrap = el('lyricsWrap');
+      wrap.innerHTML = `<div class="lyrics-meta"><div class="lyrics-title">${esc(title)}</div><div class="lyrics-artist">${esc(artist)}</div></div>`;
+      const linesWrap = document.createElement('div'); linesWrap.id='lyricsLinesWrap';
+      syncedLines.forEach((l, i)=>{
+        if (!l.text) return; // skip blank timestamp lines
+        const d = document.createElement('div'); d.className='lyric-line'; d.dataset.li=i;
+        d.textContent = l.text;
+        linesWrap.appendChild(d);
       });
+      wrap.appendChild(linesWrap);
+      // Immediately highlight at current position
+      const pos = lastPos + (Date.now()-lastUpdateTs)/1000;
+      updateLyricHighlight(pos, true);
     }
-    function updateLyricHighlight(pos) {
-      if (!lyricsLines.length) return;
-      let idx=0;
-      for (let i=0;i<lyricsLines.length;i++) { if(lyricsLines[i].t<=pos) idx=i; else break; }
-      if (idx===lastLyrIdx) return;
-      lastLyrIdx=idx;
-      el('lyricsWrap').querySelectorAll('.lyric-line').forEach((el2,i)=>{
-        el2.classList.toggle('lyr-active', i===idx);
-        el2.classList.toggle('lyr-near', i===idx-1||i===idx+1);
+
+    function updateLyricHighlight(pos, immediate=false) {
+      if (!syncedLines.length) return;
+      const wrap = el('lyricsLinesWrap'); if (!wrap) return;
+
+      // Find the line whose timestamp <= current position
+      let idx = -1;
+      for (let i=0; i<syncedLines.length; i++) {
+        if (syncedLines[i].t <= pos) idx = i;
+        else break;
+      }
+      if (idx < 0) idx = 0;
+      if (idx === lastLyrIdx) return;
+      lastLyrIdx = idx;
+
+      const allLines = wrap.querySelectorAll('.lyric-line');
+      // Map visible lyric-line index to syncedLines index
+      // (we skipped blank lines when rendering, so use data-li)
+      allLines.forEach(el2=>{
+        const li = parseInt(el2.dataset.li);
+        el2.classList.toggle('lyr-active', li===idx);
+        el2.classList.toggle('lyr-near', li===idx-1||li===idx+1);
       });
-      const active=el('lyricsWrap').querySelector('.lyr-active');
-      if (active) active.scrollIntoView({block:'center',behavior:'smooth'});
+      const active = wrap.querySelector('.lyr-active');
+      if (active) active.scrollIntoView({block:'center', behavior: immediate?'instant':'smooth'});
     }
-    // Poll lyrics highlight every 350ms when playing
+
+    // Sync loop — runs every 250ms; uses interpolated position to stay smooth
     setInterval(()=>{
-      if (lastStatus==='playing' && lyricsLines.length) {
-        const proj=lastPos+(Date.now()-lastUpdateTs)/1000;
-        updateLyricHighlight(proj);
-      }
-    }, 350);
+      if (!syncedLines.length) return;
+      const proj = lastPos + (Date.now()-lastUpdateTs)/1000;
+      updateLyricHighlight(proj);
+    }, 250);
 
-    /* ── Visualizer ───────────────────────────── */
-    const vizEl = el('vizBars');
-    for (let i=0;i<8;i++) { const b=document.createElement('div'); b.className='vb'; vizEl.appendChild(b); }
-    const vBars = [...vizEl.querySelectorAll('.vb')];
-    let vizTs = 0;
-    function animViz(playing) {
-      if (!playing) { vBars.forEach(b=>b.style.height='3px'); return; }
-      vBars.forEach(b=>b.style.height=(3+Math.random()*11)+'px');
+    // When a song starts playing, invalidate cached lyrics if track changed
+    function onTrackChanged(id) {
+      if (id !== lyricsLoadedForId) {
+        lyricsLoadedForId = null;
+        syncedLines = []; lastLyrIdx = -1;
+        // If lyrics tab is visible, auto-reload for new track
+        const lt = el('lyricsTab');
+        if (lt && lt.classList.contains('active')) {
+          loadLyrics(currentTitle, currentUploader, id);
+        }
+      }
     }
+
+    /* ════════════════════════════════════════════
+       FEATURE 7: PLAYLIST COVER ART
+    ════════════════════════════════════════════ */
+    // Handled inside renderPlaylists / loadPlaylistTracks below
+
+    /* ════════════════════════════════════════════
+       FEATURE 8: QUEUE REORDERING (drag-and-drop)
+    ════════════════════════════════════════════ */
+    // Handled inside renderQueuePanel below
 
     /* ── DOM refs ─────────────────────────────── */
-    const searchView = el('searchView');
-    const playlistView = el('playlistView');
     const npThumbnail = el('npThumbnail');
     const npDot = el('npDot');
     const npStatusText = el('npStatusText');
@@ -1503,34 +1556,43 @@
         el('sideQueue').classList.add('hidden');
         el('sideHistory').classList.add('hidden');
         const map = {recs:'sideRecs',lyrics:'sideLyrics',queue:'sideQueue',history:'sideHistory'};
-        el(map[btn.dataset.stab]).classList.remove('hidden');
+        const target = el(map[btn.dataset.stab]);
+        if (target) {
+          target.classList.remove('hidden');
+          if (btn.dataset.stab==='lyrics') openLyrics();
+          else if (btn.dataset.stab==='history') loadHistory();
+          else if (btn.dataset.stab==='queue') renderQueuePanel();
+        }
       });
     });
 
     /* ── Search ───────────────────────────────── */
     let searchDebounce = null;
-    let searchSeq = 0; // sequence counter to cancel stale requests
+    let searchSeq = 0;
 
     el('searchInput').addEventListener('input', () => {
       clearTimeout(searchDebounce);
       const q = el('searchInput').value.trim();
+      el('searchHistoryDrop').classList.remove('visible');
       if (!q) {
         clearResults();
         renderRecentStrip();
-        if (searchHistory.length) renderShDrop();
+        if (searchHistory.length) renderShDrop('');
         return;
       }
-      el('recentStrip').style.display='none';
-      el('searchHistDrop').classList.remove('open');
+      el('recentStrip').style.display = 'none';
+      renderShDrop(q);
       showSkeleton();
       searchDebounce = setTimeout(doSearch, 380);
     });
     el('searchInput').addEventListener('keydown', e => {
-      if (e.key==='Enter') { clearTimeout(searchDebounce); el('searchHistDrop').classList.remove('open'); doSearch(); }
-      if (e.key==='Escape') el('searchHistDrop').classList.remove('open');
+      if (e.key==='Enter') { clearTimeout(searchDebounce); el('searchHistoryDrop').classList.remove('visible'); doSearch(); }
+      if (e.key==='Escape') { el('searchHistoryDrop').classList.remove('visible'); }
     });
     el('searchClear').addEventListener('click', () => {
-      el('searchInput').value = ''; clearResults(); renderRecentStrip();
+      el('searchInput').value = '';
+      clearResults();
+      renderRecentStrip();
     });
 
     function clearResults() {
@@ -1538,7 +1600,6 @@
       resultsEl.innerHTML='';
       el('resultsCount').innerHTML='';
     }
-
     function showSkeleton() {
       resultsEl.innerHTML = Array(6).fill(0).map(()=>`
         <div class="skel-row">
@@ -1549,31 +1610,27 @@
           </div>
         </div>`).join('');
     }
-
     async function doSearch() {
       const q = el('searchInput').value.trim();
       if (!q) return;
       const seq = ++searchSeq;
+      shAdd(q);
+      el('searchHistoryDrop').classList.remove('visible');
+      el('recentStrip').style.display = 'none';
       el('searchSpinner').style.display = 'block';
       el('searchClear').style.display = 'none';
       try {
         const d = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30`);
-        if (seq !== searchSeq) return; // stale
-        results = d.results || [];
-        page = 0;
-        shAdd(q); // save to history
+        if (seq!==searchSeq) return;
+        results = d.results||[]; page=0;
         renderResults();
-      } catch (err) {
-        if (seq !== searchSeq) return;
+      } catch(err) {
+        if (seq!==searchSeq) return;
         resultsEl.innerHTML = `<div class="error" style="padding:12px">${esc(err.message)}</div>`;
       } finally {
-        if (seq === searchSeq) {
-          el('searchSpinner').style.display = 'none';
-          el('searchClear').style.display = '';
-        }
+        if (seq===searchSeq) { el('searchSpinner').style.display='none'; el('searchClear').style.display=''; }
       }
     }
-
     function renderResults() {
       el('resultsCount').innerHTML = results.length
         ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text-3)">${results.length} results</span><span class="bar"></span>`
@@ -1583,88 +1640,60 @@
       results.forEach(item => frag.appendChild(buildResultRow(item)));
       resultsEl.appendChild(frag);
     }
-
     function buildResultRow(item) {
       const row = document.createElement('div');
-      row.className = 'result-row' + (playingId===item.id ? ' playing' : '');
+      row.className = 'result-row'+(playingId===item.id?' playing':'');
       row.dataset.id = item.id;
-      row.dataset.title = item.title||'';
-      row.dataset.uploader = item.uploader||'';
-
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.src = item.thumbnail||'';
-      img.alt = '';
-      img.width = 68; img.height = 38;
-
-      const info = document.createElement('div');
-      info.className = 'result-info';
+      const img = document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt=''; img.width=68; img.height=38;
+      const info = document.createElement('div'); info.className='result-info';
       const t = document.createElement('div'); t.className='result-title'; t.textContent=item.title||'Untitled';
       const m = document.createElement('div'); m.className='result-meta';
       m.innerHTML = `<span>${esc(item.uploader||'')}</span>${item.duration?`<span class="dur">${esc(item.duration)}</span>`:''}`;
       info.append(t,m);
-
       const actions = document.createElement('div'); actions.className='result-actions';
-
-      const playBtn = document.createElement('button');
-      playBtn.className = 'btn-icon';
-      playBtn.title = 'Play';
-      playBtn.innerHTML = playingId===item.id ? '🔊' : '▶';
-      playBtn.disabled = !!pendingId;
-      playBtn.addEventListener('click', e => { e.stopPropagation(); handlePlay(item.id, item); });
-
-      const qBtn = document.createElement('button');
-      qBtn.className = 'btn-icon btn-sm'; qBtn.title='Add to queue'; qBtn.textContent='+Q';
-      qBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        addToQueue(item);
-        qBtn.textContent='✓'; qBtn.disabled=true;
-        setTimeout(()=>{ qBtn.textContent='+Q'; qBtn.disabled=false; },1400);
+      const playBtn = document.createElement('button'); playBtn.className='btn-icon'; playBtn.title='Play';
+      playBtn.innerHTML = playingId===item.id ? '<i class="ph ph-speaker-high"></i>' : '<i class="ph ph-play"></i>';
+      playBtn.addEventListener('click', e=>{ e.stopPropagation(); handlePlay(item.id, item); });
+      const qBtn = document.createElement('button'); qBtn.className='btn-icon btn-sm'; qBtn.title='Add to queue'; qBtn.textContent='+Q';
+      qBtn.addEventListener('click', e=>{
+        e.stopPropagation(); addToQueue(item);
+        qBtn.textContent='+'; qBtn.disabled=true;
+        setTimeout(()=>{ qBtn.textContent='+Q'; qBtn.disabled=false; }, 1400);
       });
-
       actions.append(playBtn, qBtn);
-
-      if (playlists.length > 0) {
-        const wrap = buildPlaylistDropdown(item);
-        actions.appendChild(wrap);
-      }
-
+      if (playlists.length) actions.appendChild(buildPlaylistDropdown(item));
       row.append(img, info, actions);
-      row.addEventListener('click', () => handlePlay(item.id, item));
+      row.addEventListener('click', ()=>handlePlay(item.id, item));
       return row;
     }
 
-    // (pagination removed — all results rendered at once)
-
-    /* ── Playlist dropdown helper ─────────────── */
+    /* ── Playlist dropdown ────────────────────── */
     function buildPlaylistDropdown(item) {
       const wrap = document.createElement('div'); wrap.className='dropdown-wrap';
-      const btn = document.createElement('button'); btn.className='btn-icon btn-sm'; btn.textContent='+';
-      btn.title='Add to playlist';
-      btn.addEventListener('click', e => {
+      const btn = document.createElement('button'); btn.className='btn-icon btn-sm'; btn.textContent='+'; btn.title='Add to playlist';
+      btn.addEventListener('click', e=>{
         e.stopPropagation();
         const ex = wrap.querySelector('.dropdown-menu');
         if (ex) { ex.remove(); return; }
         document.querySelectorAll('.dropdown-menu').forEach(m=>m.remove());
         const menu = document.createElement('div'); menu.className='dropdown-menu';
-        playlists.forEach(pl => {
+        playlists.forEach(pl=>{
           const mi = document.createElement('button'); mi.className='dropdown-item'; mi.textContent=pl.name;
-          mi.addEventListener('click', async ev => {
+          mi.addEventListener('click', async ev=>{
             ev.stopPropagation();
             try {
               await api(`/api/playlists/${pl.id}/tracks`,{method:'POST',body:JSON.stringify({id:item.id,title:item.title,uploader:item.uploader,duration:item.duration,thumbnail:item.thumbnail})});
-              mi.textContent='✓ Added'; mi.disabled=true;
+              mi.textContent='Added'; mi.disabled=true;
+              toast(`Added to "${pl.name}"`, 'success');
               await loadPlaylists();
             } catch(err){ mi.textContent=err.message; }
           });
           menu.appendChild(mi);
         });
         wrap.appendChild(menu);
-        // Close on outside click
-        setTimeout(()=>{ document.addEventListener('click',()=>menu.remove(),{once:true}); },0);
+        setTimeout(()=>{ document.addEventListener('click',()=>menu.remove(),{once:true}); }, 0);
       });
-      wrap.appendChild(btn);
-      return wrap;
+      wrap.appendChild(btn); return wrap;
     }
 
     /* ── Play handling ────────────────────────── */
@@ -1672,268 +1701,202 @@
       if (pendingId) return;
       controlError.textContent='';
       pendingId = id;
-
-      // Optimistic UI update
       if (itemMeta) {
-        npTitle.textContent = itemMeta.title||'Loading…';
-        npUploader.textContent = itemMeta.uploader||'';
-        npThumbnail.src = itemMeta.thumbnail||'';
-        currentTitle = itemMeta.title||'';
-        currentUploader = itemMeta.uploader||'';
-        currentThumb = itemMeta.thumbnail||'';
+        npTitle.textContent=itemMeta.title||'Loading…';
+        npUploader.textContent=itemMeta.uploader||'';
+        npThumbnail.src=itemMeta.thumbnail||'';
+        currentTitle=itemMeta.title||'';
+        currentUploader=itemMeta.uploader||'';
+        currentThumb=itemMeta.thumbnail||'';
       }
-      npStatusText.textContent = 'LOADING';
-      npDot.className = 'dot';
-
-      // Add to queue if not already there
+      npStatusText.textContent='LOADING'; npDot.className='dot';
       const existing = generalQueue.findIndex(t=>t.id===id);
       if (existing===-1 && itemMeta) {
         generalQueue.push({id:itemMeta.id,title:itemMeta.title,uploader:itemMeta.uploader||'',duration:itemMeta.duration,thumbnail:itemMeta.thumbnail});
-        gqIdx = generalQueue.length-1;
-      } else if (existing!==-1) {
-        gqIdx = existing;
-      }
-      gqActive = true;
-      renderQueuePanel();
-
+        gqIdx=generalQueue.length-1;
+      } else if (existing!==-1) { gqIdx=existing; }
+      gqActive=true; renderQueuePanel();
       try {
         const resp = await api('/api/play',{method:'POST',body:JSON.stringify({id})});
-        playingId = id;
+        playingId=id;
         if (resp.result?.meta) {
-          const m = resp.result.meta;
-          currentTitle = m.title||''; currentUploader = m.uploader||''; currentThumb = m.thumbnail||'';
-          npTitle.textContent = currentTitle;
-          npUploader.textContent = currentUploader;
-          npThumbnail.src = currentThumb;
-          rpAdd(m); // save to recently played
+          const meta = resp.result.meta;
+          currentTitle=meta.title||''; currentUploader=meta.uploader||''; currentThumb=meta.thumbnail||'';
+          npTitle.textContent=currentTitle; npUploader.textContent=currentUploader; npThumbnail.src=currentThumb;
+          // Update queue entry with real meta
+          if (generalQueue[gqIdx]) {
+            generalQueue[gqIdx]={id:meta.id||id,title:meta.title||itemMeta?.title||'',uploader:meta.uploader||'',duration:meta.duration,thumbnail:meta.thumbnail||''};
+          }
+          rpAdd(meta);
           renderRecentStrip();
-          toast(currentTitle, '▶');
+          renderQueuePanel();
+          toast(currentTitle, 'success');
         }
         setAdaptivePoll('playing');
-        // Load recs + lyrics in background without blocking
-        if (currentTitle) { loadRecs(currentTitle, currentUploader); fetchLyrics(currentTitle, currentUploader); }
+        if (currentTitle) { loadRecs(currentTitle, currentUploader); }
+        if (el('lyricsTab')?.classList.contains('active') && currentTitle) loadLyrics(currentTitle, currentUploader, playingId);
         loadHistory();
       } catch(err) {
-        controlError.textContent = err.message;
-        npStatusText.textContent = 'ERROR';
-        toast(err.message, '⚠️');
+        controlError.textContent=err.message; npStatusText.textContent='ERROR';
+        toast(err.message, 'error');
       } finally {
-        pendingId = null;
-        // Refresh result rows to update play icons
+        pendingId=null;
         if (results.length) renderResults();
       }
     }
 
     async function internalPlay(id) {
-      pendingId = id;
+      pendingId=id;
       try {
         await api('/api/play',{method:'POST',body:JSON.stringify({id})});
-        playingId = id;
+        playingId=id;
         await refreshStatus();
-        if (currentTitle) loadRecs(currentTitle, currentUploader);
+        if (currentTitle) { loadRecs(currentTitle, currentUploader); if(el('lyricsTab')?.classList.contains('active')) loadLyrics(currentTitle, currentUploader, playingId); }
         loadHistory();
-      } catch(err) {
-        controlError.textContent = err.message;
-      } finally {
-        pendingId = null;
-      }
+      } catch(err){ controlError.textContent=err.message; }
+      finally { pendingId=null; }
     }
 
     /* ── Controls ─────────────────────────────── */
     async function postCtrl(path, body) {
       controlError.textContent='';
-      try {
-        await api(path,{method:'POST',body:body?JSON.stringify(body):undefined});
-        await refreshStatus();
-      } catch(err) {
-        controlError.textContent = err.message;
-      }
+      try { await api(path,{method:'POST',body:body?JSON.stringify(body):undefined}); await refreshStatus(); }
+      catch(err){ controlError.textContent=err.message; }
     }
 
-    playPauseBtn.addEventListener('click', () => {
+    playPauseBtn.addEventListener('click', ()=>{
       if (lastStatus==='playing') { lastStatus='paused'; playPauseBtn.innerHTML='▶'; postCtrl('/api/pause'); }
-      else { lastStatus='playing'; playPauseBtn.innerHTML='⏸'; postCtrl('/api/resume'); }
+      else { lastStatus='playing'; playPauseBtn.innerHTML='<i class="ph ph-pause"></i>'; postCtrl('/api/resume'); }
     });
-    el('stopBtn').addEventListener('click', async () => {
+    el('stopBtn').addEventListener('click', async ()=>{
       try {
         await api('/api/stop',{method:'POST'});
-        lastStatus='idle'; playingId=null;
-        gqActive=false;
+        lastStatus='idle'; playingId=null; gqActive=false;
         updatePlayerUI({status:'idle',position:0,durationSeconds:0,meta:null});
         renderQueuePanel();
       } catch(err){ controlError.textContent=err.message; }
     });
-    el('prevBtn').addEventListener('click', async () => {
-      if (!generalQueue.length || gqIdx<=0) { showCtrlMsg('No previous song'); return; }
+    el('prevBtn').addEventListener('click', async ()=>{
+      if (!generalQueue.length||gqIdx<=0) { showCtrlMsg('No previous song'); return; }
       try {
-        await api('/api/stop',{method:'POST'});
-        await waitForIdle(4000);
-        gqIdx--;
-        renderQueuePanel();
-        const prev = generalQueue[gqIdx];
-        if (prev) { gqActive=true; await internalPlay(prev.id); }
+        await api('/api/stop',{method:'POST'}); await waitForIdle(4000);
+        gqIdx--; renderQueuePanel();
+        const prev=generalQueue[gqIdx]; if(prev){ gqActive=true; await internalPlay(prev.id); }
       } catch(err){ controlError.textContent=err.message; }
     });
-    el('nextBtn').addEventListener('click', async () => {
-      if (!generalQueue.length || gqIdx>=generalQueue.length-1) { showCtrlMsg('No next song'); return; }
+    el('nextBtn').addEventListener('click', async ()=>{
+      if (!generalQueue.length||gqIdx>=generalQueue.length-1) { showCtrlMsg('No next song'); return; }
       try {
-        await api('/api/stop',{method:'POST'});
-        await waitForIdle(4000);
-        gqIdx++;
-        renderQueuePanel();
-        const next = generalQueue[gqIdx];
-        if (next) { gqActive=true; await internalPlay(next.id); }
+        await api('/api/stop',{method:'POST'}); await waitForIdle(4000);
+        gqIdx++; renderQueuePanel();
+        const next=generalQueue[gqIdx]; if(next){ gqActive=true; await internalPlay(next.id); }
       } catch(err){ controlError.textContent=err.message; }
     });
-
-    el('volume').addEventListener('input', e => {
-      el('volNum').textContent = e.target.value;
+    el('volume').addEventListener('input', e=>{
+      el('volNum').textContent=e.target.value;
       api('/api/volume',{method:'POST',body:JSON.stringify({level:e.target.value})}).catch(()=>{});
     });
-
-    function showCtrlMsg(msg) {
-      controlError.textContent=msg;
-      setTimeout(()=>controlError.textContent='',2000);
-    }
-
-    async function waitForIdle(timeout=4000,interval=120) {
-      const t = Date.now();
-      while(Date.now()-t<timeout) {
-        try {
-          const d = await api('/api/status');
-          if((d.result?.status||'idle')==='idle') return true;
-        } catch{}
+    function showCtrlMsg(msg){ controlError.textContent=msg; setTimeout(()=>controlError.textContent='',2000); }
+    async function waitForIdle(timeout=4000,interval=120){
+      const t=Date.now();
+      while(Date.now()-t<timeout){
+        try{ const d=await api('/api/status'); if((d.result?.status||'idle')==='idle') return true; }catch{}
         await new Promise(r=>setTimeout(r,interval));
       }
       return false;
     }
 
     /* ── Progress ─────────────────────────────── */
-    progressInput.addEventListener('mousedown', ()=>isSeeking=true);
-    progressInput.addEventListener('touchstart', ()=>isSeeking=true);
-    progressInput.addEventListener('input', () => {
-      curTimeEl.textContent = fmt(Number(progressInput.value));
-    });
-    progressInput.addEventListener('change', async () => {
+    progressInput.addEventListener('mousedown',()=>isSeeking=true);
+    progressInput.addEventListener('touchstart',()=>isSeeking=true);
+    progressInput.addEventListener('input',()=>{ curTimeEl.textContent=fmt(Number(progressInput.value)); });
+    progressInput.addEventListener('change', async ()=>{
       isSeeking=false;
       try { await api('/api/seek',{method:'POST',body:JSON.stringify({position:Number(progressInput.value)})}); }
       catch(err){ controlError.textContent=err.message; }
     });
-
-    function setProgress(pos,dur) {
-      if (!dur) {
-        progressFill.style.width='0%';
-        progressInput.max=0; progressInput.value=0; progressInput.disabled=true;
-        curTimeEl.textContent=fmt(pos); totalTimeEl.textContent='—';
-          return;
-      }
-      progressInput.disabled=false;
-      progressInput.max=Math.floor(dur);
-      if (!isSeeking) progressInput.value=Math.floor(Math.min(pos,dur));
-      const pct = Math.min((pos/dur)*100,100).toFixed(2)+'%';
-      progressFill.style.width=pct;
-      curTimeEl.textContent=fmt(pos);
-      totalTimeEl.textContent=fmt(dur);
+    function setProgress(pos,dur){
+      if(!dur){ progressFill.style.width='0%'; progressInput.max=0; progressInput.value=0; progressInput.disabled=true; curTimeEl.textContent=fmt(pos); totalTimeEl.textContent='—'; return; }
+      progressInput.disabled=false; progressInput.max=Math.floor(dur);
+      if(!isSeeking) progressInput.value=Math.floor(Math.min(pos,dur));
+      progressFill.style.width=Math.min((pos/dur)*100,100).toFixed(2)+'%';
+      curTimeEl.textContent=fmt(pos); totalTimeEl.textContent=fmt(dur);
     }
+
+    /* ── Visualizer ───────────────────────────── */
+    const vizEl = el('vizBars');
+    for(let i=0;i<8;i++){ const b=document.createElement('div'); b.className='vb'; vizEl.appendChild(b); }
+    const vBars=[...vizEl.querySelectorAll('.vb')];
+    let vizFrame=0;
+    function animViz(playing){ if(!playing){ vBars.forEach(b=>b.style.height='3px'); return; } vBars.forEach(b=>b.style.height=(3+Math.random()*11)+'px'); }
 
     /* ── rAF tick ─────────────────────────────── */
     let lastTickPos=-1, lastTickStatus='';
-    let vizFrame=0;
-    function tick(now) {
+    function tick(now){
       requestAnimationFrame(tick);
-      const elapsed = (Date.now()-lastUpdateTs)/1000;
-      const proj = lastStatus==='playing' && !isSeeking ? lastPos+elapsed : lastPos;
-      // Only update DOM if values changed meaningfully
-      if (Math.abs(proj-lastTickPos)>0.1 || lastStatus!==lastTickStatus) {
-        setProgress(proj, lastDur);
-        lastTickPos=proj; lastTickStatus=lastStatus;
-      }
-      if (now-vizFrame>120) {
-        animViz(lastStatus==='playing');
-        vizFrame=now;
-      }
+      const elapsed=(Date.now()-lastUpdateTs)/1000;
+      const proj=lastStatus==='playing'&&!isSeeking?lastPos+elapsed:lastPos;
+      if(Math.abs(proj-lastTickPos)>0.1||lastStatus!==lastTickStatus){ setProgress(proj,lastDur); lastTickPos=proj; lastTickStatus=lastStatus; }
+      if(now-vizFrame>120){ animViz(lastStatus==='playing'); vizFrame=now; }
     }
     requestAnimationFrame(tick);
 
-    /* ── Status polling (adaptive) ────────────── */
-    function setAdaptivePoll(status) {
+    /* ── Status polling ───────────────────────── */
+    function setAdaptivePoll(status){
       clearInterval(pollInterval);
-      const interval = status==='playing' ? 1200 : status==='paused' ? 3000 : 5000;
-      pollInterval = setInterval(refreshStatus, interval);
+      const interval=status==='playing'?1200:status==='paused'?3000:5000;
+      pollInterval=setInterval(refreshStatus,interval);
     }
-
-    async function refreshStatus() {
-      try {
-        const d = await api('/api/status');
-        const s = d.result||{};
-        updatePlayerUI(s);
-      } catch{}
+    async function refreshStatus(){
+      try{ const d=await api('/api/status'); updatePlayerUI(d.result||{}); }catch{}
     }
-
-    function updatePlayerUI(s) {
-      const st = s.status||'idle';
-      const prevStatus = lastStatus;
-      lastStatus=st;
-      lastPos = s.position??0;
-      lastDur = s.durationSeconds||s.meta?.durationSeconds||0;
-      lastUpdateTs=Date.now();
-
-      if (st!==prevStatus) {
+    function updatePlayerUI(s){
+      const st=s.status||'idle';
+      const prevStatus=lastStatus;
+      lastStatus=st; lastPos=s.position??0; lastDur=s.durationSeconds||s.meta?.durationSeconds||0; lastUpdateTs=Date.now();
+      if(st!==prevStatus){
         setAdaptivePoll(st);
-        // Play/pause button
-        playPauseBtn.innerHTML = st==='playing' ? '⏸' : '▶';
-        // Dot indicator
+        playPauseBtn.innerHTML=st==='playing'?'<i class="ph ph-pause"></i>':'<i class="ph ph-play"></i>';
         npDot.className='dot'+(st==='playing'?'':st==='paused'?' paused':' idle');
         npStatusText.textContent=st.toUpperCase();
       }
-      if (s.meta?.id) playingId=s.meta.id;
-      if (s.meta?.title && s.meta.title!==currentTitle) {
-        currentTitle=s.meta.title||'';
-        currentUploader=s.meta.uploader||'';
-        currentThumb=s.meta.thumbnail||'';
-        npTitle.textContent=currentTitle||'Nothing playing';
-        npUploader.textContent=currentUploader;
-        npThumbnail.src=currentThumb;
+      if(s.meta?.id) playingId=s.meta.id;
+      if(s.meta?.title&&s.meta.title!==currentTitle){
+        currentTitle=s.meta.title||''; currentUploader=s.meta.uploader||''; currentThumb=s.meta.thumbnail||'';
+        npTitle.textContent=currentTitle||'Nothing playing'; npUploader.textContent=currentUploader; npThumbnail.src=currentThumb;
+        rpAdd(s.meta); renderRecentStrip();
       }
-      if (!s.meta) {
-        npTitle.textContent='Nothing playing';
-        npUploader.textContent='';
-        currentTitle=''; currentUploader=''; currentThumb='';
-      }
-      // Auto-advance queue
-      if (gqActive && prevStatus==='playing' && st==='idle' && !pendingId) {
-        advanceQueue();
-      }
+      if(!s.meta){ npTitle.textContent='Nothing playing'; npUploader.textContent=''; currentTitle=''; currentUploader=''; currentThumb=''; }
+      if(gqActive&&prevStatus==='playing'&&st==='idle'&&!pendingId) advanceQueue();
     }
 
     /* ── Queue ────────────────────────────────── */
-    function addToQueue(item) {
-      if (generalQueue.some(t=>t.id===item.id)) return;
+    function addToQueue(item){
+      if(generalQueue.some(t=>t.id===item.id)) return;
       generalQueue.push({id:item.id,title:item.title,uploader:item.uploader||'',duration:item.duration,thumbnail:item.thumbnail});
       renderQueuePanel();
-      // Show queue tab briefly
-      const stab = document.querySelector('[data-stab="queue"]');
-      stab.textContent='Queue ('+generalQueue.length+')';
-      setTimeout(()=>stab.textContent='Queue',2000);
+      toast(`Added: ${item.title}`, 'info');
+      const stab=document.querySelector('[data-stab="queue"]');
+      stab.textContent=`Queue (${generalQueue.length})`;
+      setTimeout(()=>stab.textContent='Queue', 2000);
     }
-
-    function advanceQueue() {
+    function advanceQueue(){
       gqIdx++;
-      if (gqIdx>=generalQueue.length) { gqActive=false; gqIdx=0; renderQueuePanel(); return; }
+      if(gqIdx>=generalQueue.length){ gqActive=false; gqIdx=0; renderQueuePanel(); return; }
       renderQueuePanel();
-      const next=generalQueue[gqIdx];
-      if (next) internalPlay(next.id);
+      const next=generalQueue[gqIdx]; if(next) internalPlay(next.id);
     }
 
-    function renderQueuePanel() {
+    /* ── Queue rendering with drag-and-drop ─────── */
+    function renderQueuePanel(){
       sideQueue.innerHTML='';
-      if (!generalQueue.length) {
+      if(!generalQueue.length){
         sideQueue.innerHTML='<div class="queue-empty">No songs in queue.<br><span style="font-size:10px">Press +Q on any result</span></div>';
         return;
       }
       const hdr=document.createElement('div');
       hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
-      hdr.innerHTML=`<span style="font-size:11px;color:var(--text-3);font-family:var(--mono)">${generalQueue.length} track${generalQueue.length>1?'s':''}</span>`;
+      hdr.innerHTML=`<span style="font-size:11px;color:var(--text-3);font-family:var(--mono)">${generalQueue.length} track${generalQueue.length>1?'s':''} · drag to reorder</span>`;
       const clearBtn=document.createElement('button'); clearBtn.className='btn btn-ghost btn-sm'; clearBtn.textContent='Clear';
       clearBtn.addEventListener('click',()=>{ generalQueue=[]; gqActive=false; gqIdx=0; renderQueuePanel(); });
       hdr.appendChild(clearBtn); sideQueue.appendChild(hdr);
@@ -1944,45 +1907,35 @@
         const row=document.createElement('div');
         row.className='side-item'+(i===gqIdx&&gqActive?' active':'');
         row.draggable=true;
-
-        // drag-and-drop events
         row.addEventListener('dragstart',e=>{ dragSrc=i; row.classList.add('dq-drag'); e.dataTransfer.effectAllowed='move'; });
         row.addEventListener('dragend',()=>{ row.classList.remove('dq-drag'); sideQueue.querySelectorAll('.dq-over').forEach(r=>r.classList.remove('dq-over')); });
-        row.addEventListener('dragover',e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; row.classList.add('dq-over'); });
+        row.addEventListener('dragover',e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; sideQueue.querySelectorAll('.dq-over').forEach(r=>r.classList.remove('dq-over')); row.classList.add('dq-over'); });
         row.addEventListener('dragleave',()=>row.classList.remove('dq-over'));
         row.addEventListener('drop',e=>{
           e.preventDefault(); row.classList.remove('dq-over');
-          if (dragSrc===null||dragSrc===i) return;
+          if(dragSrc===null||dragSrc===i) return;
           const [moved]=generalQueue.splice(dragSrc,1);
           generalQueue.splice(i,0,moved);
-          // adjust active index
-          if (gqActive) {
-            if (dragSrc===gqIdx) gqIdx=i;
-            else if (dragSrc<gqIdx && i>=gqIdx) gqIdx--;
-            else if (dragSrc>gqIdx && i<=gqIdx) gqIdx++;
+          if(gqActive){
+            if(dragSrc===gqIdx) gqIdx=i;
+            else if(dragSrc<gqIdx&&i>=gqIdx) gqIdx--;
+            else if(dragSrc>gqIdx&&i<=gqIdx) gqIdx++;
           }
-          // Notify backend of reorder (best-effort)
-          (async ()=>{
-            try {
-              await api('/api/queue/reorder',{method:'POST',body:JSON.stringify({from:dragSrc,to:i})});
-            } catch(e) { /* ignore */ }
-          })();
+          // Best-effort backend sync
+          api('/api/queue/reorder',{method:'POST',body:JSON.stringify({from:dragSrc,to:i})}).catch(()=>{});
           dragSrc=null; renderQueuePanel();
         });
-
-        const handle=document.createElement('span'); handle.className='drag-handle'; handle.textContent='⠿';
+        const handle=document.createElement('span'); handle.className='drag-handle'; handle.title='Drag to reorder'; handle.innerHTML='<i class="ph ph-dots-six-vertical"></i>';
         const num=document.createElement('span'); num.className='queue-num'; num.textContent=i+1;
         const img=document.createElement('img'); img.loading='lazy'; img.src=t.thumbnail||''; img.alt=''; img.width=48; img.height=28;
         const info=document.createElement('div'); info.className='side-item-info';
         const tt=document.createElement('div'); tt.className='side-item-title'; tt.textContent=t.title;
         const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=t.uploader||'';
         info.append(tt,su);
-
         const acts=document.createElement('div'); acts.className='side-item-actions';
-        const rm=document.createElement('button'); rm.className='btn-icon btn-sm'; rm.textContent='✕';
-        rm.addEventListener('click',e=>{ e.stopPropagation(); generalQueue.splice(i,1); if(gqActive&&gqIdx>=i&&gqIdx>0)gqIdx--; if(!generalQueue.length){gqActive=false;gqIdx=0;} renderQueuePanel(); });
+        const rm=document.createElement('button'); rm.className='btn-icon btn-sm'; rm.title='Remove'; rm.innerHTML='<i class="ph ph-x"></i>';
+        rm.addEventListener('click',e=>{ e.stopPropagation(); generalQueue.splice(i,1); if(gqActive&&gqIdx>=i&&gqIdx>0) gqIdx--; if(!generalQueue.length){gqActive=false;gqIdx=0;} renderQueuePanel(); });
         acts.appendChild(rm);
-
         row.append(handle,num,img,info,acts);
         row.addEventListener('click',()=>{ gqIdx=i; gqActive=true; internalPlay(t.id); renderQueuePanel(); });
         frag.appendChild(row);
@@ -1991,20 +1944,16 @@
     }
 
     /* ── Recommendations ──────────────────────── */
-    async function loadRecs(title, uploader) {
+    async function loadRecs(title,uploader){
       sideRecs.innerHTML='<div class="muted" style="font-size:11px;padding:8px">Loading…</div>';
-      try {
-        const d = await api(`/api/related?title=${encodeURIComponent(title)}&uploader=${encodeURIComponent(uploader||'')}&limit=50`);
-        allRecs=d.results||[]; recsIdx=0;
-        renderRecsChunk(true);
-      } catch{
-        sideRecs.innerHTML='<div class="muted" style="font-size:11px;padding:8px">No recommendations.</div>';
-      }
+      try{
+        const d=await api(`/api/related?title=${encodeURIComponent(title)}&uploader=${encodeURIComponent(uploader||'')}&limit=50`);
+        allRecs=d.results||[]; recsIdx=0; renderRecsChunk(true);
+      }catch{ sideRecs.innerHTML='<div class="muted" style="font-size:11px;padding:8px">No recommendations.</div>'; }
     }
-
-    function renderRecsChunk(clear=false) {
-      if (clear) { sideRecs.innerHTML=''; recsIdx=0; }
-      const slice=allRecs.slice(recsIdx, recsIdx+RECS_BATCH);
+    function renderRecsChunk(clear=false){
+      if(clear){ sideRecs.innerHTML=''; recsIdx=0; }
+      const slice=allRecs.slice(recsIdx,recsIdx+RECS_BATCH);
       const frag=document.createDocumentFragment();
       slice.forEach(item=>{
         const row=document.createElement('div'); row.className='side-item';
@@ -2014,620 +1963,227 @@
         const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=item.uploader||'';
         info.append(tt,su);
         const acts=document.createElement('div'); acts.className='side-item-actions';
-        const pb=document.createElement('button'); pb.className='btn-icon btn-sm'; pb.textContent='▶';
-        pb.addEventListener('click',e=>{ e.stopPropagation(); handlePlay(item.id, item); });
+        const pb=document.createElement('button'); pb.className='btn-icon btn-sm'; pb.innerHTML='<i class="ph ph-play"></i>';
+        pb.addEventListener('click',e=>{ e.stopPropagation(); handlePlay(item.id,item); });
         const qb=document.createElement('button'); qb.className='btn-icon btn-sm'; qb.textContent='+Q';
-        qb.addEventListener('click',e=>{ e.stopPropagation(); addToQueue(item); qb.textContent='✓'; qb.disabled=true; setTimeout(()=>{qb.textContent='+Q';qb.disabled=false;},1400); });
+        qb.addEventListener('click',e=>{ e.stopPropagation(); addToQueue(item); qb.textContent='+'; qb.disabled=true; setTimeout(()=>{qb.textContent='+Q';qb.disabled=false;},1400); });
         acts.append(pb,qb);
         row.append(img,info,acts);
         row.addEventListener('click',()=>handlePlay(item.id,item));
         frag.appendChild(row);
       });
-      sideRecs.appendChild(frag);
-      recsIdx+=slice.length;
+      sideRecs.appendChild(frag); recsIdx+=slice.length;
     }
-
-    el('sideRecs').addEventListener('scroll', () => {
-      const el2=el('sideRecs');
-      if (el2.scrollTop+el2.clientHeight>=el2.scrollHeight-60 && recsIdx<allRecs.length) renderRecsChunk();
+    el('sideRecs').addEventListener('scroll',()=>{
+      const e2=el('sideRecs');
+      if(e2.scrollTop+e2.clientHeight>=e2.scrollHeight-60&&recsIdx<allRecs.length) renderRecsChunk();
     });
-    el('sideHistory').addEventListener('scroll', () => {});
 
     /* ── History ──────────────────────────────── */
-    async function loadHistory() {
-      try {
-        const d=await api('/api/history');
-        const h=d.history||[];
+    async function loadHistory(){
+      try{
+        const d=await api('/api/history'); const h=d.history||[];
         sideHistory.innerHTML='';
-        if (!h.length) { sideHistory.innerHTML='<div class="queue-empty">No history yet.</div>'; return; }
+        if(!h.length){sideHistory.innerHTML='<div class="queue-empty">No history yet.</div>';return;}
         const frag=document.createDocumentFragment();
         h.forEach(item=>{
           const row=document.createElement('div'); row.className='side-item';
+          const img=document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt=''; img.width=48; img.height=28;
           const info=document.createElement('div'); info.className='side-item-info';
           const tt=document.createElement('div'); tt.className='side-item-title'; tt.textContent=item.title;
           const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=item.uploader||'';
           info.append(tt,su);
           const acts=document.createElement('div'); acts.className='side-item-actions';
-          const pb=document.createElement('button'); pb.className='btn-icon btn-sm'; pb.textContent='▶';
-          pb.addEventListener('click',e=>{ e.stopPropagation(); gqActive=false; handlePlay(item.id||item.title,item); });
-          acts.appendChild(pb);
-          row.append(info,acts);
-          row.addEventListener('click',()=>{ gqActive=false; handlePlay(item.id||item.title,item); });
+          const pb=document.createElement('button'); pb.className='btn-icon btn-sm'; pb.innerHTML='<i class="ph ph-play"></i>';
+          pb.addEventListener('click',e=>{e.stopPropagation();handlePlay(item.id||item.title,item);});
+          const qb=document.createElement('button'); qb.className='btn-icon btn-sm'; qb.textContent='+Q';
+          qb.addEventListener('click',e=>{e.stopPropagation();addToQueue(item);qb.textContent='+';qb.disabled=true;setTimeout(()=>{qb.textContent='+Q';qb.disabled=false;},1400);});
+          acts.append(pb,qb);
+          row.append(img,info,acts);
+          row.addEventListener('click',()=>handlePlay(item.id||item.title,item));
           frag.appendChild(row);
         });
         sideHistory.appendChild(frag);
-      } catch{}
+      }catch{}
     }
 
-    /* ── Playlist management ──────────────────── */
-    async function loadPlaylists() {
-      try {
-        const d=await api('/api/playlists');
-        playlists=d.playlists||[];
-        renderPlaylists();
-      } catch(err) {
-        el('playlistList').innerHTML=`<span class="error">${esc(err.message)}</span>`;
+    /* ── Playlists ────────────────────────────── */
+    function buildPlaylistCollage(id, placeholder, tracks) {
+      // tracks may be provided directly or fetched
+      async function render(tks) {
+        const thumbs = tks.filter(t=>t.thumbnail).slice(0,4).map(t=>t.thumbnail);
+        if (!thumbs.length) return; // keep placeholder
+        const collage = document.createElement('div'); collage.className='pl-collage';
+        // Fill all 4 cells (repeat last thumb if fewer than 4)
+        for (let i=0;i<4;i++) {
+          const img=document.createElement('img'); img.src=thumbs[i]||thumbs[thumbs.length-1]; img.alt='';
+          img.onerror=()=>{ img.style.background='var(--surface-3)'; img.src=''; };
+          collage.appendChild(img);
+        }
+        if (placeholder.parentNode) placeholder.replaceWith(collage);
       }
+      if (tracks) { render(tracks); return; }
+      api(`/api/playlists/${id}`).then(d=>render(d.playlist?.tracks||[])).catch(()=>{});
     }
 
-    function renderPlaylists() {
-      const container=el('playlistList');
-      container.innerHTML='';
-      if (!playlists.length) {
-        container.innerHTML='<div class="muted" style="font-size:12px;padding:8px 0">No playlists yet. Create one above!</div>';
-        return;
-      }
+    async function loadPlaylists(){
+      try{
+        const d=await api('/api/playlists'); playlists=d.playlists||[]; renderPlaylists();
+      }catch(err){ el('playlistList').innerHTML=`<span class="error">${esc(err.message)}</span>`; }
+    }
+    function renderPlaylists(){
+      const container=el('playlistList'); container.innerHTML='';
+      if(!playlists.length){ container.innerHTML='<div class="muted" style="font-size:12px;padding:8px 0">No playlists yet. Create one above!</div>'; return; }
       const frag=document.createDocumentFragment();
       playlists.forEach(pl=>{
         const card=document.createElement('div'); card.className='pl-card';
         const head=document.createElement('div'); head.className='pl-card-head';
-
+        // Cover art placeholder — replaced with real image after tracks load
+        const coverEl=document.createElement('div'); coverEl.className='pl-cover-ph'; coverEl.innerHTML='<i class="ph ph-music-note" style="font-size:18px;color:var(--text-3)"></i>'; coverEl.dataset.plid=pl.id;
         const nameBtn=document.createElement('button'); nameBtn.className='pl-card-name'; nameBtn.textContent=pl.name;
         nameBtn.title='Click to expand, double-click to rename';
         nameBtn.addEventListener('click',()=>togglePlExpand(pl.id));
         nameBtn.addEventListener('dblclick',()=>startRenamePl(pl.id,nameBtn));
-
-        const count=document.createElement('span'); count.className='pl-count'; count.textContent=`${pl.trackCount} track${pl.trackCount!==1?'s':''}`;
-
-        // Cover art — populated when tracks are loaded
-        const coverEl=document.createElement('div'); coverEl.className='pl-cover-ph'; coverEl.textContent='🎵';
-        coverEl.dataset.plid=pl.id;
-
+        const count=document.createElement('span'); count.className='pl-count'; count.textContent=`${pl.trackCount??0} track${(pl.trackCount??0)!==1?'s':''}`;
         const actions=document.createElement('div'); actions.style.cssText='display:flex;gap:4px';
-        const playBtn=document.createElement('button'); playBtn.className='btn btn-accent btn-sm'; playBtn.textContent='▶ Play';
-        playBtn.addEventListener('click',e=>{ e.stopPropagation(); startPlaylistQueue(pl.id,'sequential'); });
-        const shufBtn=document.createElement('button'); shufBtn.className='btn btn-ghost btn-sm'; shufBtn.textContent='🔀';
-        shufBtn.addEventListener('click',e=>{ e.stopPropagation(); startPlaylistQueue(pl.id,'shuffle'); });
-        const delBtn=document.createElement('button'); delBtn.className='btn btn-danger btn-sm'; delBtn.textContent='✕';
-        delBtn.addEventListener('click',async e=>{ e.stopPropagation(); if(!confirm(`Delete "${pl.name}"?`))return; try{ await api(`/api/playlists/${pl.id}`,{method:'DELETE'}); await loadPlaylists(); }catch(err){alert(err.message);} });
+        const playBtn=document.createElement('button'); playBtn.className='btn btn-accent btn-sm'; playBtn.innerHTML='<i class="ph ph-play"></i> Play';
+        playBtn.addEventListener('click',e=>{e.stopPropagation();startPlaylistQueue(pl.id,'sequential');});
+        const shufBtn=document.createElement('button'); shufBtn.className='btn btn-ghost btn-sm'; shufBtn.innerHTML='<i class="ph ph-shuffle"></i>';
+        shufBtn.addEventListener('click',e=>{e.stopPropagation();startPlaylistQueue(pl.id,'shuffle');});
+        const delBtn=document.createElement('button'); delBtn.className='btn btn-danger btn-sm'; delBtn.innerHTML='<i class="ph ph-x"></i>';
+        delBtn.addEventListener('click',async e=>{e.stopPropagation();if(!confirm(`Delete "${pl.name}"?`))return;try{await api(`/api/playlists/${pl.id}`,{method:'DELETE'});await loadPlaylists();}catch(err){alert(err.message);}});
         actions.append(playBtn,shufBtn,delBtn);
-
         head.append(coverEl,nameBtn,count,actions);
         card.appendChild(head);
-
-        if (expandedPl===pl.id) {
+        if(expandedPl===pl.id){
           const tracks=document.createElement('div'); tracks.className='pl-tracks';
           tracks.innerHTML='<div class="muted" style="font-size:11px">Loading…</div>';
           card.appendChild(tracks);
           loadPlaylistTracks(pl.id,tracks,coverEl);
+        } else {
+          // Build collage from coverUrl or fetch track thumbnails
+          buildPlaylistCollage(pl.id, coverEl);
         }
         frag.appendChild(card);
       });
       container.appendChild(frag);
     }
-
-    function togglePlExpand(id) { expandedPl=expandedPl===id?null:id; renderPlaylists(); }
-
-    async function loadPlaylistTracks(id, container, coverEl) {
-      try {
-        const d=await api(`/api/playlists/${id}`);
-        const tracks=d.playlist?.tracks||[];
-        // Populate cover art with first track that has a thumbnail
-        if (coverEl && tracks.length) {
-          const first=tracks.find(t=>t.thumbnail);
-          if (first) {
-            const img=document.createElement('img'); img.className='pl-cover'; img.src=first.thumbnail; img.alt='';
-            img.onerror=()=>{ img.replaceWith(coverEl); }; // fallback to placeholder on error
-            coverEl.replaceWith(img);
-          }
-        }
+    function togglePlExpand(id){ expandedPl=expandedPl===id?null:id; renderPlaylists(); }
+    async function loadPlaylistTracks(id,container,coverEl){
+      try{
+        const d=await api(`/api/playlists/${id}`); const tracks=d.playlist?.tracks||[];
+        // Build collage from actual tracks
+        if(coverEl) buildPlaylistCollage(id, coverEl, tracks);
         container.innerHTML='';
-        if (!tracks.length) { container.innerHTML='<div class="muted" style="font-size:11px">No tracks.</div>'; return; }
+        if(!tracks.length){container.innerHTML='<div class="muted" style="font-size:11px">No tracks.</div>';return;}
         tracks.forEach((t,i)=>{
           const row=document.createElement('div'); row.className='pl-track';
           const n=document.createElement('span'); n.className='pl-track-num'; n.textContent=i+1;
           const tt=document.createElement('span'); tt.className='pl-track-title'; tt.textContent=t.title; tt.title=t.title;
           const up=document.createElement('span'); up.className='pl-track-up'; up.textContent=t.uploader||'';
-          const pb=document.createElement('button'); pb.className='btn-icon btn-sm'; pb.textContent='▶';
-          pb.addEventListener('click',()=>{ gqActive=false; handlePlay(t.id,t); });
-          const rm=document.createElement('button'); rm.className='btn-icon btn-sm btn-danger'; rm.textContent='✕';
-          rm.addEventListener('click',async()=>{ try{ await api(`/api/playlists/${id}/tracks/${t.id}`,{method:'DELETE'}); await loadPlaylists(); }catch(err){alert(err.message);} });
-          row.append(n,tt,up,pb,rm);
-          container.appendChild(row);
+          const pb=document.createElement('button'); pb.className='btn-icon btn-sm'; pb.innerHTML='<i class="ph ph-play"></i>';
+          pb.addEventListener('click',()=>{gqActive=false;handlePlay(t.id,t);});
+          const rm=document.createElement('button'); rm.className='btn-icon btn-sm btn-danger'; rm.innerHTML='<i class="ph ph-x"></i>';
+          rm.addEventListener('click',async()=>{try{await api(`/api/playlists/${id}/tracks/${t.id}`,{method:'DELETE'});await loadPlaylists();}catch(err){alert(err.message);}});
+          row.append(n,tt,up,pb,rm); container.appendChild(row);
         });
-      } catch(err){ container.innerHTML=`<span class="error">${esc(err.message)}</span>`; }
+      }catch(err){container.innerHTML=`<span class="error">${esc(err.message)}</span>`;}
     }
-
-    async function startRenamePl(id, nameBtn) {
+    async function startRenamePl(id,nameBtn){
       const pl=playlists.find(p=>p.id===id); if(!pl) return;
       const input=document.createElement('input'); input.className='pl-rename-input'; input.value=pl.name;
       input.addEventListener('blur',async()=>{
         const n=input.value.trim();
-        if (n&&n!==pl.name) { try{ await api(`/api/playlists/${id}`,{method:'PATCH',body:JSON.stringify({name:n})}); await loadPlaylists(); }catch(err){alert(err.message);} }
+        if(n&&n!==pl.name){try{await api(`/api/playlists/${id}`,{method:'PATCH',body:JSON.stringify({name:n})});await loadPlaylists();}catch(err){alert(err.message);}}
         else renderPlaylists();
       });
-      input.addEventListener('keydown',e=>{ if(e.key==='Enter') input.blur(); if(e.key==='Escape'){renderPlaylists();} });
+      input.addEventListener('keydown',e=>{if(e.key==='Enter') input.blur();if(e.key==='Escape') renderPlaylists();});
       nameBtn.replaceWith(input); input.focus(); input.select();
     }
-
-    el('createPlBtn').addEventListener('click', async()=>{
+    el('createPlBtn').addEventListener('click',async()=>{
       const name=el('newPlName').value.trim(); if(!name) return;
-      try{ await api('/api/playlists',{method:'POST',body:JSON.stringify({name})}); el('newPlName').value=''; await loadPlaylists(); }
+      try{await api('/api/playlists',{method:'POST',body:JSON.stringify({name})});el('newPlName').value='';await loadPlaylists();}
       catch(err){alert(err.message);}
     });
-    el('newPlName').addEventListener('keydown', e=>{ if(e.key==='Enter') el('createPlBtn').click(); });
-
-    async function startPlaylistQueue(id, mode) {
-      const d=await api(`/api/playlists/${id}`);
-      const tracks=d.playlist?.tracks||[];
-      if (!tracks.length) { alert('Playlist is empty!'); return; }
-      generalQueue=tracks.map(t=>({id:t.id,title:t.title,uploader:t.uploader||'',duration:t.duration,thumbnail:t.thumbnail}));
-      if (mode==='shuffle') shuffle(generalQueue);
-      gqActive=true; gqIdx=0;
-      renderQueuePanel();
-      // Switch to queue tab to show it
-      document.querySelector('[data-stab="queue"]').click();
-      const first=generalQueue[0];
-      if (first) internalPlay(first.id);
+    el('newPlName').addEventListener('keydown',e=>{ if(e.key==='Enter') el('createPlBtn').click(); });
+    async function startPlaylistQueue(id,mode){
+      try{
+        const d=await api(`/api/playlists/${id}`); const tracks=d.playlist?.tracks||[];
+        if(!tracks.length){alert('Playlist is empty!');return;}
+        generalQueue=tracks.map(t=>({id:t.id,title:t.title,uploader:t.uploader||'',duration:t.duration,thumbnail:t.thumbnail}));
+        if(mode==='shuffle') shuffle(generalQueue);
+        gqActive=true; gqIdx=0; renderQueuePanel();
+        document.querySelector('[data-stab="queue"]').click();
+        const first=generalQueue[0]; if(first) internalPlay(first.id);
+      }catch(err){alert(err.message);}
     }
-
-    function shuffle(arr) { for(let i=arr.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [arr[i],arr[j]]=[arr[j],arr[i]]; } }
+    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[arr[i],arr[j]]=[arr[j],arr[i]];} }
 
     /* ── AI Chat ──────────────────────────────── */
     const chatPanel=el('chatPanel');
-    el('chatToggle').addEventListener('click',()=>{ chatPanel.classList.toggle('open'); });
-    // Close on outside click
+    el('chatToggle').addEventListener('click',()=>chatPanel.classList.toggle('open'));
     document.addEventListener('click',e=>{
-      if (!chatPanel.contains(e.target) && e.target!==el('chatToggle')) chatPanel.classList.remove('open');
+      if(!chatPanel.contains(e.target)&&e.target!==el('chatToggle')) chatPanel.classList.remove('open');
     });
-
-    async function sendChat() {
+    async function sendChat(){
       const msg=el('chatInput').value.trim(); if(!msg) return;
       el('chatInput').value=''; el('chatSend').disabled=true;
       appendMsg('user',msg);
       const typing=appendMsg('ai','…typing',true);
-      try {
+      try{
         const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
-        const d=await r.json();
-        typing.remove();
-        if (!d.ok) throw new Error(d.error||'AI request failed');
+        const d=await r.json(); typing.remove();
+        if(!d.ok) throw new Error(d.error||'AI request failed');
         const bubble=document.createElement('div'); bubble.className='msg ai';
-
-        // Message text
-        const msgDiv=document.createElement('div');
-        msgDiv.style.marginBottom='8px';
-        msgDiv.textContent=d.message||'';
-        bubble.appendChild(msgDiv);
-
-        // Suggestion rows: [play btn] [label] [+Q btn]
+        const msgDiv=document.createElement('div'); msgDiv.style.marginBottom='8px'; msgDiv.textContent=d.message||''; bubble.appendChild(msgDiv);
         const sugWrap=document.createElement('div');
         (d.suggestions||[]).forEach(s=>{
           const query=s.query||'';
           const row=document.createElement('div'); row.className='sug-row';
-
-          const playBtn=document.createElement('button'); playBtn.className='sug-btn';
-          playBtn.textContent=query; playBtn.title=s.reason||'';
+          const playBtn=document.createElement('button'); playBtn.className='sug-btn'; playBtn.textContent=query; playBtn.title=s.reason||'';
+          const qBtn=document.createElement('button'); qBtn.className='sug-q-btn'; qBtn.textContent='+Q'; qBtn.title='Add to queue';
           playBtn.addEventListener('click',async()=>{
-            playBtn.disabled=true; playBtn.textContent='⏳ Loading…';
-            qBtn.disabled=true;
+            playBtn.disabled=true; playBtn.textContent='⏳ Loading…'; qBtn.disabled=true;
             chatPanel.classList.remove('open');
-            try {
-              // Use handlePlay via a synthetic item so UI updates properly
-              pendingId=query;
-              npStatusText.textContent='LOADING'; npDot.className='dot';
+            try{
+              pendingId=query; npStatusText.textContent='LOADING'; npDot.className='dot';
               const resp=await api('/api/play',{method:'POST',body:JSON.stringify({query})});
-              pendingId=null;
-              playingId=resp.result?.meta?.id||null;
+              pendingId=null; playingId=resp.result?.meta?.id||null;
               if(resp.result?.meta){
-                const m=resp.result.meta;
-                currentTitle=m.title||query; currentUploader=m.uploader||''; currentThumb=m.thumbnail||'';
+                const meta=resp.result.meta;
+                currentTitle=meta.title||query; currentUploader=meta.uploader||''; currentThumb=meta.thumbnail||'';
                 npTitle.textContent=currentTitle; npUploader.textContent=currentUploader; npThumbnail.src=currentThumb;
-                // Add to queue
-                if(!generalQueue.some(t=>t.id===m.id)){
-                  generalQueue.push({id:m.id,title:m.title,uploader:m.uploader||'',duration:m.duration,thumbnail:m.thumbnail});
-                  gqIdx=generalQueue.length-1; gqActive=true; renderQueuePanel();
-                }
+                if(!generalQueue.some(t=>t.id===meta.id)){ generalQueue.push({id:meta.id,title:meta.title,uploader:meta.uploader||'',duration:meta.duration,thumbnail:meta.thumbnail}); gqIdx=generalQueue.length-1; gqActive=true; renderQueuePanel(); }
+                rpAdd(meta); renderRecentStrip();
               }
-              setAdaptivePoll('playing');
-              await refreshStatus();
+              setAdaptivePoll('playing'); await refreshStatus();
               if(currentTitle) loadRecs(currentTitle,currentUploader);
-              playBtn.textContent='✓ Playing';
-            } catch(err){
-              pendingId=null;
-              playBtn.textContent=query; playBtn.disabled=false; qBtn.disabled=false;
-              controlError.textContent=err.message;
-            }
+              playBtn.textContent='Playing';
+            }catch(err){ pendingId=null; playBtn.textContent=query; playBtn.disabled=false; qBtn.disabled=false; controlError.textContent=err.message; }
           });
-
-          const qBtn=document.createElement('button'); qBtn.className='sug-q-btn'; qBtn.textContent='+Q';
-          qBtn.title='Add to queue';
           qBtn.addEventListener('click',()=>{
-            // Add as a queue item using the query string as a placeholder
-            // It will resolve to real metadata when played
             const item={id:query,title:query,uploader:'',duration:null,thumbnail:''};
-            if(!generalQueue.some(t=>t.id===query)){
-              generalQueue.push(item); renderQueuePanel();
-            }
-            qBtn.textContent='✓'; qBtn.disabled=true;
-            setTimeout(()=>{ qBtn.textContent='+Q'; qBtn.disabled=false; },1400);
+            if(!generalQueue.some(t=>t.id===query)){generalQueue.push(item);renderQueuePanel();}
+            qBtn.textContent='+'; qBtn.disabled=true; setTimeout(()=>{qBtn.textContent='+Q';qBtn.disabled=false;},1400);
           });
-
-          row.append(playBtn,qBtn);
-          sugWrap.appendChild(row);
+          row.append(playBtn,qBtn); sugWrap.appendChild(row);
         });
-        bubble.appendChild(sugWrap);
-        el('chatMsgs').appendChild(bubble);
-      } catch(err){
-        typing.remove();
-        appendMsg('ai',`⚠ ${err.message}`);
-      }
-      el('chatSend').disabled=false;
-      el('chatMsgs').scrollTop=9999;
+        bubble.appendChild(sugWrap); el('chatMsgs').appendChild(bubble);
+      }catch(err){ typing.remove(); appendMsg('ai',`Error: ${err.message}`); }
+      el('chatSend').disabled=false; el('chatMsgs').scrollTop=9999;
     }
-
-    function appendMsg(role, text, temp=false) {
-      const div=document.createElement('div'); div.className='msg '+role;
-      div.textContent=text;
-      el('chatMsgs').appendChild(div);
-      el('chatMsgs').scrollTop=9999;
-      return div;
+    function appendMsg(role,text){
+      const div=document.createElement('div'); div.className='msg '+role; div.textContent=text;
+      el('chatMsgs').appendChild(div); el('chatMsgs').scrollTop=9999; return div;
     }
-
     el('chatSend').addEventListener('click',sendChat);
     el('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendChat(); });
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Toast Notifications
-    ═══════════════════════════════════════════ */
-    function toast(msg, type='info', duration=2800) {
-      const t = document.createElement('div');
-      t.className = `toast ${type}`;
-      const icons = { success:'✓', info:'♪', error:'⚠' };
-      t.innerHTML = `<span>${icons[type]||'♪'}</span><span>${esc(msg)}</span>`;
-      el('toastContainer').appendChild(t);
-      setTimeout(()=>{
-        t.classList.add('fade-out');
-        t.addEventListener('animationend', ()=>t.remove(), { once:true });
-      }, duration);
-    }
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Keyboard Shortcuts
-    ═══════════════════════════════════════════ */
-    let kbHintTimer = null;
-    function flashKbHint(msg) {
-      const h = el('kbHint'); h.textContent = msg; h.classList.add('visible');
-      clearTimeout(kbHintTimer);
-      kbHintTimer = setTimeout(()=>h.classList.remove('visible'), 1400);
-    }
-    document.addEventListener('keydown', e => {
-      const tag = document.activeElement?.tagName?.toLowerCase();
-      if (tag==='input'||tag==='textarea') return;
-      if (e.ctrlKey||e.metaKey||e.altKey) return;
-      switch(e.key) {
-        case ' ': e.preventDefault(); playPauseBtn.click(); flashKbHint(lastStatus==='playing'?'Paused':'Playing'); break;
-        case 'ArrowRight': e.preventDefault(); api('/api/seek',{method:'POST',body:JSON.stringify({position:Math.max(0,lastPos+10)})}).catch(()=>{}); flashKbHint('→ +10s'); break;
-        case 'ArrowLeft':  e.preventDefault(); api('/api/seek',{method:'POST',body:JSON.stringify({position:Math.max(0,lastPos-10)})}).catch(()=>{}); flashKbHint('← -10s'); break;
-        case 'ArrowUp':   e.preventDefault(); { const v=Math.min(100,Number(el('volume').value)+5); el('volume').value=v; el('volNum').textContent=v; api('/api/volume',{method:'POST',body:JSON.stringify({level:v})}).catch(()=>{}); flashKbHint(`🔊 ${v}%`); } break;
-        case 'ArrowDown': e.preventDefault(); { const v=Math.max(0,Number(el('volume').value)-5); el('volume').value=v; el('volNum').textContent=v; api('/api/volume',{method:'POST',body:JSON.stringify({level:v})}).catch(()=>{}); flashKbHint(`🔉 ${v}%`); } break;
-        case 'n': el('nextBtn').click(); flashKbHint('Next →'); break;
-        case 'p': el('prevBtn').click(); flashKbHint('← Prev'); break;
-        case 's': el('stopBtn').click(); flashKbHint('Stopped'); break;
-        case 'l': el('lyricsToggle').click(); flashKbHint('Lyrics'); break;
-        case '/': e.preventDefault(); el('searchInput').focus(); break;
-      }
-    });
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Lyrics Panel
-    ═══════════════════════════════════════════ */
-    // Use `lyricsPanelFor` here to avoid clashing with the earlier `lyricsFor` used by
-    // the synced-lyrics helper elsewhere in the file.
-    let lyricsOpen=false, lyricsPanelFor='';
-    el('lyricsToggle').addEventListener('click',()=>toggleLyrics());
-    el('lyricsClose').addEventListener('click',()=>toggleLyrics(false));
-    function toggleLyrics(force) {
-      lyricsOpen=(force!==undefined)?force:!lyricsOpen;
-      el('lyricsPanel').classList.toggle('open',lyricsOpen);
-      el('sidebar').style.marginRight=lyricsOpen?'300px':'0';
-      if (lyricsOpen && currentTitle && currentTitle!==lyricsPanelFor) fetchLyrics(currentTitle, currentUploader);
-    }
-    async function fetchLyrics(title, artist) {
-      lyricsPanelFor=title;
-      const body=el('lyricsBody');
-      body.className='loading'; body.innerHTML='Searching for lyrics…';
-      const cleanTitle=title.replace(/\(official.*?\)/gi,'').replace(/\[.*?\]/g,'').replace(/official (video|audio|lyric|music video)/gi,'').replace(/\s+/g,' ').trim();
-      const cleanArtist=artist.replace(/\s*-\s*Topic$/,'').trim();
-      try {
-          // Prefer server-side lyrics proxy to avoid CORS and unify sources
-          const r = await fetch(`/api/lyrics?artist=${encodeURIComponent(cleanArtist)}&title=${encodeURIComponent(cleanTitle)}`);
-          if (!r.ok) throw new Error('not found');
-          const d = await r.json();
-          if (!d.ok || !d.lyrics) throw new Error('no lyrics');
-          body.className='';
-          body.innerHTML=`<div class="lyrics-title">${esc(cleanTitle)}</div><div class="lyrics-artist">${esc(cleanArtist)}</div>${esc(d.lyrics)}`;
-      } catch {
-        try {
-          const r2=await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`);
-          const d2=await r2.json();
-          if (!d2.lyrics) throw new Error('none');
-          body.className='';
-          body.innerHTML=`<div class="lyrics-title">${esc(cleanTitle)}</div><div class="lyrics-artist">${esc(cleanArtist)}</div>${esc(d2.lyrics)}`;
-        } catch {
-          body.className='error'; body.textContent='Lyrics not found for this track.';
-        }
-      }
-    }
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Recently Played Strip
-    ═══════════════════════════════════════════ */
-    function renderRecentStrip() {
-      const strip=el('recentStrip'), cards=el('recentCards');
-      const recentItems=window._recentCache||[];
-      if (!recentItems.length||el('searchInput').value.trim()) { strip.classList.remove('visible'); return; }
-      strip.classList.add('visible');
-      cards.innerHTML='';
-      const frag=document.createDocumentFragment();
-      recentItems.slice(0,10).forEach(item=>{
-        const card=document.createElement('div'); card.className='recent-card'; card.title=item.title;
-        const img=document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt=''; img.width=108; img.height=60;
-        const info=document.createElement('div'); info.className='recent-card-info';
-        const tt=document.createElement('div'); tt.className='recent-card-title'; tt.textContent=item.title||'';
-        const up=document.createElement('div'); up.className='recent-card-up'; up.textContent=item.uploader||'';
-        info.append(tt,up); card.append(img,info);
-        card.addEventListener('click',()=>handlePlay(item.id,item));
-        frag.appendChild(card);
-      });
-      cards.appendChild(frag);
-    }
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Search History Dropdown
-    ═══════════════════════════════════════════ */
-    // Use a separate variable to avoid colliding with the earlier `searchHistory` variable
-    let resonSearchHistory=JSON.parse(localStorage.getItem('reson_search_history')||'[]');
-    function saveSearchToHistory(q) {
-      resonSearchHistory=[q,...resonSearchHistory.filter(s=>s!==q)].slice(0,12);
-      localStorage.setItem('reson_search_history',JSON.stringify(resonSearchHistory));
-    }
-    function renderSearchHistoryDrop(filter='') {
-      const drop=el('searchHistoryDrop');
-      const items=filter?resonSearchHistory.filter(s=>s.toLowerCase().includes(filter.toLowerCase())):resonSearchHistory;
-      if (!items.length){drop.classList.remove('visible');return;}
-      drop.innerHTML='';
-      items.slice(0,8).forEach(q=>{
-        const row=document.createElement('div'); row.className='sh-item';
-        const icon=document.createElement('span'); icon.className='sh-item-icon'; icon.textContent='🕐';
-        const text=document.createElement('span'); text.className='sh-item-text'; text.textContent=q;
-        const del=document.createElement('button'); del.className='sh-item-del'; del.textContent='✕';
-        del.addEventListener('click',e=>{ e.stopPropagation(); resonSearchHistory=resonSearchHistory.filter(s=>s!==q); localStorage.setItem('reson_search_history',JSON.stringify(resonSearchHistory)); renderSearchHistoryDrop(filter); });
-        row.append(icon,text,del);
-        row.addEventListener('click',e=>{ e.stopPropagation(); el('searchInput').value=q; drop.classList.remove('visible'); clearTimeout(searchDebounce); doSearch(); });
-        drop.appendChild(row);
-      });
-      drop.classList.add('visible');
-    }
-    el('searchInput').addEventListener('focus',()=>{ if(!el('searchInput').value.trim()) renderSearchHistoryDrop(''); });
-    document.addEventListener('click',e=>{ if(!el('searchBar').contains(e.target)) el('searchHistoryDrop').classList.remove('visible'); });
-    // Intercept doSearch to save queries
-    // Authoritative doSearch — adds search history saving
-    async function doSearch() {
-      const q=el('searchInput').value.trim();
-      if(q){ saveSearchToHistory(q); el('searchHistoryDrop').classList.remove('visible'); }
-      el('recentStrip').classList.remove('visible');
-      if (!q) return;
-      const seq=++searchSeq;
-      el('searchSpinner').style.display='block'; el('searchClear').style.display='none';
-      try {
-        const d=await api(`/api/search?q=${encodeURIComponent(q)}&limit=30`);
-        if(seq!==searchSeq) return;
-        results=d.results||[]; page=0; renderResults();
-      } catch(err) {
-        if(seq!==searchSeq) return;
-        resultsEl.innerHTML=`<div class="error" style="padding:12px">${esc(err.message)}</div>`;
-      } finally {
-        if(seq===searchSeq){ el('searchSpinner').style.display='none'; el('searchClear').style.display=''; }
-      }
-    }
-    // Show/hide strip on input
-    el('searchInput').addEventListener('input',()=>{
-      const hasQ=el('searchInput').value.trim().length>0;
-      if(!hasQ) { loadHistory(); }
-      if(hasQ) { const q=el('searchInput').value.trim(); renderSearchHistoryDrop(q); }
-    },{capture:true});
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Queue Drag-and-Drop Reorder
-    ═══════════════════════════════════════════ */
-    let dragSrcIdx=null;
-    // Authoritative renderQueuePanel with drag-and-drop
-    function renderQueuePanel() {
-      sideQueue.innerHTML='';
-      if (!generalQueue.length) {
-        sideQueue.innerHTML='<div class="queue-empty">No songs in queue.<br><span style="font-size:10px">Press +Q on any result</span></div>';
-        return;
-      }
-      const hdr=document.createElement('div');
-      hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
-      hdr.innerHTML=`<span style="font-size:11px;color:var(--text-3);font-family:var(--mono)">${generalQueue.length} track${generalQueue.length>1?'s':''} — drag to reorder</span>`;
-      const clearBtn=document.createElement('button'); clearBtn.className='btn btn-ghost btn-sm'; clearBtn.textContent='Clear';
-      clearBtn.addEventListener('click',()=>{ generalQueue=[]; gqActive=false; gqIdx=0; renderQueuePanel(); });
-      hdr.appendChild(clearBtn); sideQueue.appendChild(hdr);
-      const frag=document.createDocumentFragment();
-      generalQueue.forEach((t,i)=>{
-        const row=document.createElement('div');
-        row.className='side-item'+(i===gqIdx&&gqActive?' active':'');
-        row.draggable=true; row.dataset.idx=i;
-        row.addEventListener('dragstart',e=>{ dragSrcIdx=i; row.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
-        row.addEventListener('dragend',()=>{ dragSrcIdx=null; document.querySelectorAll('.side-item.drag-over,.side-item.dragging').forEach(r=>r.classList.remove('drag-over','dragging')); });
-        row.addEventListener('dragover',e=>{ e.preventDefault(); document.querySelectorAll('.side-item.drag-over').forEach(r=>r.classList.remove('drag-over')); row.classList.add('drag-over'); });
-        row.addEventListener('drop',e=>{
-          e.preventDefault();
-          if(dragSrcIdx===null||dragSrcIdx===i) return;
-          const mv=generalQueue.splice(dragSrcIdx,1)[0]; generalQueue.splice(i,0,mv);
-          if(gqIdx===dragSrcIdx) gqIdx=i;
-          else if(dragSrcIdx<i&&gqIdx>dragSrcIdx&&gqIdx<=i) gqIdx--;
-          else if(dragSrcIdx>i&&gqIdx>=i&&gqIdx<dragSrcIdx) gqIdx++;
-          renderQueuePanel();
-        });
-        const num=document.createElement('span'); num.className='queue-num'; num.textContent=i+1; num.title='Drag to reorder'; num.style.cursor='grab';
-        const img=document.createElement('img'); img.loading='lazy'; img.src=t.thumbnail||''; img.alt=''; img.width=48; img.height=28;
-        const info=document.createElement('div'); info.className='side-item-info';
-        const tt=document.createElement('div'); tt.className='side-item-title'; tt.textContent=t.title;
-        const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=t.uploader||'';
-        info.append(tt,su);
-        const acts=document.createElement('div'); acts.className='side-item-actions';
-        const rm=document.createElement('button'); rm.className='btn-icon btn-sm'; rm.textContent='✕';
-        rm.addEventListener('click',e=>{ e.stopPropagation(); generalQueue.splice(i,1); if(gqActive&&gqIdx>=i&&gqIdx>0)gqIdx--; if(!generalQueue.length){gqActive=false;gqIdx=0;} renderQueuePanel(); });
-        acts.appendChild(rm);
-        row.append(num,img,info,acts);
-        row.addEventListener('click',()=>{ gqIdx=i; gqActive=true; internalPlay(t.id); renderQueuePanel(); });
-        frag.appendChild(row);
-      });
-      sideQueue.appendChild(frag);
-    }
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Playlist Cover Art
-    ═══════════════════════════════════════════ */
-    // Authoritative renderPlaylists with cover art
-    function renderPlaylists() {
-      const container=el('playlistList'); container.innerHTML='';
-      if (!playlists.length) { container.innerHTML='<div style="color:var(--text-3);font-size:12px;padding:12px 0">No playlists yet. Create one above.</div>'; return; }
-      playlists.forEach(pl=>{
-        const card=document.createElement('div'); card.className='pl-card';
-        const head=document.createElement('div'); head.className='pl-card-head';
-        const firstThumb=pl.tracks?.[0]?.thumbnail||'';
-        if (firstThumb) {
-          const img=document.createElement('img'); img.className='pl-cover'; img.loading='lazy'; img.src=firstThumb; img.alt=''; head.appendChild(img);
-        } else {
-          const ph=document.createElement('div'); ph.className='pl-cover-placeholder'; ph.textContent='♪'; head.appendChild(ph);
-        }
-        const nameBtn=document.createElement('button'); nameBtn.className='pl-card-name'; nameBtn.textContent=pl.name;
-        nameBtn.addEventListener('click',()=>{ expandedPl=(expandedPl===pl.id)?null:pl.id; renderPlaylists(); });
-        nameBtn.addEventListener('dblclick',e=>{ e.stopPropagation(); startRenamePl(pl.id,nameBtn); });
-        const count=document.createElement('span'); count.className='pl-count'; count.textContent=`${pl.tracks?.length||0} tracks`;
-        const actWrap=document.createElement('div'); actWrap.style.cssText='display:flex;gap:4px;';
-        const playBtn=document.createElement('button'); playBtn.className='btn btn-accent btn-sm'; playBtn.textContent='▶';
-        playBtn.addEventListener('click',e=>{e.stopPropagation();startPlaylistQueue(pl.id,'in-order');});
-        const shufBtn=document.createElement('button'); shufBtn.className='btn btn-ghost btn-sm'; shufBtn.textContent='⇌'; shufBtn.title='Shuffle';
-        shufBtn.addEventListener('click',e=>{e.stopPropagation();startPlaylistQueue(pl.id,'shuffle');});
-        const delBtn=document.createElement('button'); delBtn.className='btn btn-danger btn-sm'; delBtn.textContent='✕';
-        delBtn.addEventListener('click',async e=>{ e.stopPropagation(); if(!confirm(`Delete "${pl.name}"?`))return; try{await api(`/api/playlists/${pl.id}`,{method:'DELETE'});await loadPlaylists();}catch(err){alert(err.message);} });
-        actWrap.append(playBtn,shufBtn,delBtn);
-        head.append(nameBtn,count,actWrap);
-        card.appendChild(head);
-        if (expandedPl===pl.id) {
-          const tracks=document.createElement('div'); tracks.className='pl-tracks';
-          loadPlaylistTracks(pl.id,tracks); card.appendChild(tracks);
-        }
-        container.appendChild(card);
-      });
-    }
-
-    /* ═══════════════════════════════════════════
-       FEATURE: Equalizer Presets
-    ═══════════════════════════════════════════ */
-    let activeEqPreset='flat';
-    el('eqToggle').addEventListener('click',e=>{ e.stopPropagation(); el('eqPanel').classList.toggle('open'); });
-    document.addEventListener('click',e=>{ if(!el('eqWrap').contains(e.target)) el('eqPanel').classList.remove('open'); });
-    document.querySelectorAll('.eq-preset').forEach(btn=>{
-      btn.addEventListener('click',async()=>{
-        const preset=btn.dataset.preset;
-        document.querySelectorAll('.eq-preset').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active'); activeEqPreset=preset; el('eqPanel').classList.remove('open');
-        try {
-          await api('/api/equalizer',{method:'POST',body:JSON.stringify({preset})});
-          const labels={flat:'Flat',bass_boost:'Bass Boost',vocal:'Vocal',treble:'Treble',loud:'Loud'};
-          toast(`EQ: ${labels[preset]||preset}`,'info');
-        } catch(err){ toast(`EQ: ${err.message}`,'error'); }
-      });
-    });
-
-    // Authoritative handlePlay with toast + lyrics
-    async function handlePlay(id, itemMeta) {
-      if (pendingId) return;
-      controlError.textContent='';
-      pendingId = id;
-      if (itemMeta?.title) setTimeout(()=>toast(`♪ ${itemMeta.title}`,'success'), 300);
-      if (itemMeta) {
-        npTitle.textContent=itemMeta.title||'Loading…';
-        npUploader.textContent=itemMeta.uploader||'';
-        npThumbnail.src=itemMeta.thumbnail||'';
-        currentTitle=itemMeta.title||''; currentUploader=itemMeta.uploader||''; currentThumb=itemMeta.thumbnail||'';
-      }
-      npStatusText.textContent='LOADING'; npDot.className='dot';
-      const existing=generalQueue.findIndex(t=>t.id===id);
-      if (existing===-1&&itemMeta) {
-        generalQueue.push({id:itemMeta.id,title:itemMeta.title,uploader:itemMeta.uploader||'',duration:itemMeta.duration,thumbnail:itemMeta.thumbnail});
-        gqIdx=generalQueue.length-1;
-      } else if (existing!==-1) { gqIdx=existing; }
-      gqActive=true; renderQueuePanel();
-      try {
-        const resp=await api('/api/play',{method:'POST',body:JSON.stringify({id})});
-        playingId=id;
-        if (resp.result?.meta) {
-          const m=resp.result.meta;
-          currentTitle=m.title||''; currentUploader=m.uploader||''; currentThumb=m.thumbnail||'';
-          npTitle.textContent=currentTitle; npUploader.textContent=currentUploader; npThumbnail.src=currentThumb;
-        }
-        setAdaptivePoll('playing');
-        if (currentTitle) loadRecs(currentTitle,currentUploader);
-        loadHistory();
-        if (lyricsOpen && currentTitle && currentTitle!==lyricsPanelFor) fetchLyrics(currentTitle,currentUploader);
-      } catch(err) {
-        controlError.textContent=err.message; npStatusText.textContent='ERROR';
-      } finally {
-        pendingId=null;
-        if (results.length) renderResults();
-      }
-    }
-
-    // Authoritative loadHistory — populates sidebar + recent strip
-    async function loadHistory() {
-      try {
-        const d=await api('/api/history');
-        const h=d.history||[];
-        window._recentCache=h;
-        if(!el('searchInput').value.trim()) renderRecentStrip();
-        sideHistory.innerHTML='';
-        if (!h.length){sideHistory.innerHTML='<div class="queue-empty">No history yet.</div>';return;}
-        const frag=document.createDocumentFragment();
-        h.forEach(item=>{
-          const row=document.createElement('div'); row.className='side-item';
-          const info=document.createElement('div'); info.className='side-item-info';
-          const tt=document.createElement('div'); tt.className='side-item-title'; tt.textContent=item.title;
-          const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=item.uploader||'';
-          info.append(tt,su);
-          const acts=document.createElement('div'); acts.className='side-item-actions';
-          const pb=document.createElement('button'); pb.className='btn-icon btn-sm'; pb.textContent='▶';
-          pb.addEventListener('click',e=>{e.stopPropagation();handlePlay(item.id,item);});
-          const qb=document.createElement('button'); qb.className='btn-icon btn-sm'; qb.textContent='+Q';
-          qb.addEventListener('click',e=>{e.stopPropagation();addToQueue(item);qb.textContent='✓';qb.disabled=true;setTimeout(()=>{qb.textContent='+Q';qb.disabled=false;},1400);});
-          acts.append(pb,qb);
-          row.append(info,acts);
-          row.addEventListener('click',()=>handlePlay(item.id,item));
-          frag.appendChild(row);
-        });
-        sideHistory.appendChild(frag);
-      } catch{}
-    }
 
     /* ── Boot ─────────────────────────────────── */
     refreshStatus();
     loadPlaylists();
     loadHistory();
+    renderRecentStrip();
     setAdaptivePoll('idle');
     setInterval(()=>{ if(!document.hidden) loadHistory(); }, 15000);
     renderQueuePanel();
