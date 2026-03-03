@@ -40,7 +40,6 @@
         font-size: 13px;
         line-height: 1.5;
         min-height: 100vh;
-        /* subtle noise texture */
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
       }
 
@@ -49,14 +48,12 @@
       ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
       ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
-      /* ── Layout shell ─────────────────────── */
       #app {
         display: grid;
         grid-template-rows: auto 1fr;
         min-height: 100vh;
       }
 
-      /* ── Top bar ─────────────────────────── */
       #topbar {
         display: flex;
         align-items: center;
@@ -140,7 +137,6 @@
         display: flex; gap: 6px; align-items: center; margin-left: auto;
       }
 
-      /* ── Tab nav ─────────────────────────── */
       #tabNav {
         display: flex;
         gap: 2px;
@@ -167,7 +163,6 @@
       }
       .tab-btn:hover:not(.active) { color: var(--text); }
 
-      /* ── Main content area ───────────────── */
       #main {
         display: flex;
         height: calc(100vh - 57px);
@@ -180,18 +175,88 @@
         #sidebar { display: none; }
       }
 
-      /* ── Left panel (tabs) ───────────────── */
+      /* ── Mobile layout fix — bottom mini-player bar on small screens ── */
+      @media (max-width: 900px) {
+        body { padding-bottom: 72px; }
+        #main { height: calc(100vh - 57px - 72px); }
+        #mobilebar {
+          display: flex !important;
+          position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+          background: var(--surface); border-top: 1px solid var(--border-2);
+          backdrop-filter: blur(12px);
+          align-items: center; gap: 10px;
+          padding: 8px 14px;
+          height: 72px;
+        }
+        #mobilebar img {
+          width: 48px; height: 48px; border-radius: var(--r-sm); object-fit: cover;
+          background: var(--surface-3); flex-shrink: 0;
+        }
+        #mobilebarInfo { flex: 1; min-width: 0; }
+        #mobilebarTitle {
+          font-size: 13px; font-weight: 600;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        #mobilebarSub { font-size: 10px; color: var(--text-3); }
+        #mobilebarProg {
+          position: absolute; top: 0; left: 0; right: 0; height: 2px;
+          background: var(--accent); transform-origin: left;
+          transition: transform 400ms linear;
+        }
+        #chatToggle { bottom: 84px; }
+        /* Hide topbar tabs on mobile, use tab bar instead */
+        #topBarRight #tabNav { display: none; }
+        #mobileTabBar {
+          display: flex !important;
+          position: fixed; bottom: 72px; left: 0; right: 0; z-index: 499;
+          background: var(--surface-2); border-top: 1px solid var(--border);
+        }
+        #mobileTabBar button {
+          flex: 1; padding: 7px 0;
+          border: none; background: none; color: var(--text-3);
+          font-size: 10px; font-family: var(--sans); cursor: pointer;
+          display: flex; flex-direction: column; align-items: center; gap: 2px;
+          transition: color 150ms;
+        }
+        #mobileTabBar button.active { color: var(--accent); }
+        #mobileTabBar button i { font-size: 16px; }
+      }
+      #mobilebar { display: none; }
+      #mobileTabBar { display: none; }
+
+      /* ── Mobile sidebar overlay ── */
+      @media (max-width: 900px) {
+        #sidebar {
+          display: none;
+          position: fixed; inset: 0; z-index: 600;
+          width: 100%; height: 100%;
+          background: var(--bg);
+          overflow-y: auto;
+          padding-bottom: 80px;
+        }
+        #sidebar.mobile-open {
+          display: flex !important;
+        }
+        #sidebar .mobile-close-bar {
+          display: flex !important;
+          position: sticky; top: 0; z-index: 601;
+          background: var(--surface); border-bottom: 1px solid var(--border);
+          padding: 10px 14px; align-items: center; gap: 8px;
+        }
+        /* EQ responsive: buttons wrap + bigger touch targets */
+        #eqBtns { gap: 6px; }
+        #eqBtns .eq-btn { padding: 6px 14px; font-size: 12px; }
+      }
+
       #leftPanel {
         overflow-y: auto;
         padding: 16px 20px 80px;
         border-right: 1px solid var(--border);
       }
 
-      /* ── Views ───────────────────────────── */
       .view { display: none; }
       .view.active { display: block; }
 
-      /* ── Search results ──────────────────── */
       #resultsCount {
         font-size: 11px;
         color: var(--text-3);
@@ -253,7 +318,6 @@
       .result-row:hover .result-actions { opacity: 1; }
       .result-row.playing .result-actions { opacity: 1; }
 
-      /* ── Buttons ─────────────────────────── */
       .btn {
         display: inline-flex; align-items: center; gap: 4px;
         padding: 5px 10px;
@@ -303,7 +367,6 @@
       .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
       .btn-sm { padding: 3px 8px; font-size: 10px; }
 
-      /* ── Dropdown menu ───────────────────── */
       .dropdown-wrap { position: relative; display: inline-block; }
       .dropdown-menu {
         position: absolute; top: calc(100% + 4px); right: 0;
@@ -328,7 +391,6 @@
       }
       .dropdown-item:hover { background: rgba(232,255,90,0.08); color: var(--accent); }
 
-      /* ── Sidebar (right) ─────────────────── */
       #sidebar {
         display: flex;
         flex-direction: column;
@@ -336,7 +398,6 @@
         background: var(--surface);
       }
 
-      /* ── Now Playing (sidebar top) ───────── */
       #nowPlayingCard {
         flex-shrink: 0;
         padding: 16px;
@@ -386,7 +447,6 @@
       }
       #npUploader { color: var(--text-2); font-size: 11px; margin-bottom: 10px; }
 
-      /* Progress */
       .progress-row {
         display: flex;
         align-items: center;
@@ -450,7 +510,6 @@
         width: 100%;
       }
 
-      /* Controls */
       .ctrl-row {
         display: flex; gap: 6px; align-items: center;
         margin-bottom: 10px;
@@ -491,7 +550,6 @@
         margin-top: 2px;
       }
 
-      /* Visualizer (tiny bars in label area) */
       #vizBars {
         display: flex;
         gap: 2px;
@@ -507,7 +565,6 @@
         opacity: 0.6;
       }
 
-      /* ── Sidebar tabs ─────────────────────── */
       #sidebarTabs {
         display: flex;
         border-bottom: 1px solid var(--border);
@@ -525,7 +582,7 @@
 
       #sidebarContent { flex: 1; overflow-y: auto; padding: 12px; }
 
-      /* ── Recs / History / Queue items ──── */
+      /* ── FIX: Unified side-item image sizing via CSS only ── */
       .side-item {
         display: flex; gap: 8px; align-items: center;
         padding: 6px;
@@ -540,6 +597,8 @@
         width: 52px; height: 36px;
         object-fit: cover; border-radius: var(--r-sm);
         background: var(--surface-3); flex-shrink: 0;
+        /* FIX: ensure img renders at correct size even without src */
+        min-width: 52px; min-height: 36px;
       }
       .side-item-info { flex: 1; min-width: 0; }
       .side-item-title {
@@ -551,7 +610,6 @@
       .side-item:hover .side-item-actions { opacity: 1; }
       .side-item.active .side-item-actions { opacity: 1; }
 
-      /* Queue specific */
       .queue-num {
         font-family: var(--mono); font-size: 10px; color: var(--text-3);
         min-width: 18px; text-align: right; flex-shrink: 0;
@@ -562,7 +620,6 @@
         line-height: 1.8;
       }
 
-      /* ── Playlist view ────────────────────── */
       #playlistView .pl-header {
         display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
@@ -623,7 +680,6 @@
         font-family: var(--sans); min-width: 0; flex: 1;
       }
 
-      /* ── Playlist collage cover ──────────── */
       .pl-collage {
         width: 56px; height: 56px; border-radius: var(--r-sm);
         flex-shrink: 0; overflow: hidden;
@@ -641,7 +697,6 @@
         color: var(--text-3);
       }
 
-      /* ── Badge / tag ─────────────────────── */
       .badge {
         font-family: var(--mono);
         font-size: 9px; font-weight: 700;
@@ -654,8 +709,6 @@
       .badge-teal { background: rgba(0,212,177,0.12); color: var(--teal); }
       .badge-muted { background: rgba(255,255,255,0.06); color: var(--text-3); }
 
-
-      /* ── AI Chat ─────────────────────────── */
       #chatToggle {
         position: fixed; bottom: 16px; right: 16px; z-index: 1002;
         width: 46px; height: 46px; border-radius: 50%;
@@ -741,7 +794,6 @@
       #chatSend:hover { filter: brightness(1.1); }
       #chatSend:disabled { opacity: 0.4; cursor: not-allowed; }
 
-      /* ── Loading skeleton ────────────────── */
       .skeleton {
         background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
         background-size: 200% 100%;
@@ -760,16 +812,12 @@
       .skel-line-w1 { width: 75%; }
       .skel-line-w2 { width: 45%; }
 
-      /* ── Misc helpers ─────────────────────── */
       .error { color: var(--red); font-size: 11px; }
       .muted { color: var(--text-3); }
       .hidden { display: none !important; }
       .flex { display: flex; gap: 6px; align-items: center; }
       .spacer { flex: 1; }
 
-
-
-      /* ── EQ presets ───────────────────────── */
       #eqSection {
         margin-top: 8px; padding-top: 8px;
         border-top: 1px solid var(--border);
@@ -782,15 +830,16 @@
       #eqSection label span { color: var(--accent); }
       #eqBtns { display: flex; flex-wrap: wrap; gap: 4px; }
       .eq-btn {
-        padding: 3px 9px; border-radius: 999px; font-size: 10px;
+        padding: 4px 10px; border-radius: 999px; font-size: 11px;
         border: 1px solid var(--border); background: none;
         color: var(--text-3); cursor: pointer; font-family: var(--sans);
         transition: all 120ms;
+        min-height: 28px;
+        display: inline-flex; align-items: center; gap: 4px;
       }
       .eq-btn:hover { border-color: var(--border-2); color: var(--text-2); }
       .eq-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
-      /* ── Queue drag-and-drop ──────────────── */
       .side-item[draggable="true"] { cursor: grab; }
       .side-item[draggable="true"]:active { cursor: grabbing; }
       .side-item.dq-over { outline: 1px dashed var(--accent); background: var(--accent-dim); }
@@ -800,7 +849,6 @@
         padding: 0 3px; flex-shrink: 0; user-select: none;
       }
 
-      /* ── Playlist cover art ───────────────── */
       .pl-cover {
         width: 40px; height: 40px; border-radius: var(--r-sm);
         object-fit: cover; background: var(--surface-3); flex-shrink: 0;
@@ -812,11 +860,6 @@
         font-size: 18px;
       }
 
-
-
-
-
-      /* ── Sidebar Lyrics ───────────────────────── */
       #sideLyrics {
         padding: 0;
         display: block;
@@ -853,31 +896,32 @@
         white-space: pre-wrap; font-size: 12px; line-height: 1.8;
         padding: 0 8px; color: var(--text-2);
       }
-      /* ── Recently played strip ──────────────── */
+
+      /* ── FIX: Recently played strip ── */
       #recentStrip {
         margin-bottom: 16px;
-        display: none; /* hidden by default; shown when search is empty */
+        display: none;
       }
-      #recentStrip.visible { display: block; }
       #recentStrip h3 {
         font-family: var(--mono); font-size: 10px; font-weight: 700;
         letter-spacing: 0.08em; text-transform: uppercase;
         color: var(--text-3); margin-bottom: 10px;
       }
       #recentCards {
-        display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+        display: flex; flex-wrap: wrap; gap: 8px;
       }
-      #recentCards::-webkit-scrollbar { height: 3px; }
       .recent-card {
-        flex-shrink: 0; width: 150px; cursor: pointer;
+        width: 150px; cursor: pointer;
         border-radius: var(--r); overflow: hidden;
         background: var(--surface-2); border: 1px solid var(--border);
         transition: border-color 150ms, transform 120ms, box-shadow 120ms;
       }
       .recent-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+      /* FIX: recent card image — always reserve space even without src */
       .recent-card img {
         width: 150px; height: 84px; object-fit: cover; display: block;
         background: var(--surface-3);
+        min-height: 84px;
       }
       .recent-card-info { padding: 8px 10px 10px; }
       .recent-card-title {
@@ -887,7 +931,6 @@
       }
       .recent-card-up { font-size: 10px; color: var(--text-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-      /* ── Search history dropdown ────────────── */
       #searchHistoryDrop {
         position: absolute; top: calc(100% + 6px); left: 0; right: 0;
         background: var(--surface-3); border: 1px solid var(--border-2);
@@ -907,11 +950,9 @@
       .sh-item-del { color: var(--text-3); font-size: 11px; padding: 2px 4px; border: none; background: none; cursor: pointer; }
       .sh-item-del:hover { color: var(--red); }
 
-      /* ── Queue drag-and-drop ─────────────────── */
       .side-item.dragging { opacity: 0.45; }
       .side-item.drag-over { border-top: 2px solid var(--accent); }
 
-      /* ── Keyboard shortcut hint ─────────────── */
       #kbHint {
         position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
         font-size: 10px; color: var(--text-3); font-family: var(--mono);
@@ -922,8 +963,6 @@
       }
       #kbHint.visible { opacity: 1; }
 
-
-      /* ── Toast notifications (floating, no layout impact) ── */
       #toastContainer {
         position: fixed;
         bottom: 24px;
@@ -968,17 +1007,120 @@
         0%   { opacity: 1; transform: translateY(0)    scale(1);    }
         100% { opacity: 0; transform: translateY(-8px) scale(0.95); }
       }
+      /* ── Keyboard Cheatsheet Modal ── */
+      #kbModal {
+        display: none; position: fixed; inset: 0; z-index: 2000;
+        background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+        align-items: center; justify-content: center;
+      }
+      #kbModal.open { display: flex; }
+      #kbModalBox {
+        background: var(--surface); border: 1px solid var(--border-2);
+        border-radius: var(--r-lg); padding: 24px 28px;
+        width: 460px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+        animation: toast-rise 250ms cubic-bezier(0.34,1.56,0.64,1);
+      }
+      #kbModal h2 {
+        font-family: var(--mono); font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.1em;
+        color: var(--accent); margin-bottom: 18px;
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .kb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+      .kb-row {
+        display: flex; align-items: center; gap: 8px;
+        padding: 4px 0; border-bottom: 1px solid var(--border);
+      }
+      .kb-key {
+        font-family: var(--mono); font-size: 10px; font-weight: 700;
+        background: var(--surface-3); border: 1px solid var(--border-2);
+        border-radius: 4px; padding: 2px 6px; min-width: 28px;
+        text-align: center; color: var(--text-2); flex-shrink: 0;
+      }
+      .kb-desc { font-size: 11px; color: var(--text-3); }
+
+      /* ── Error Recovery UI ── */
+      #setupBanner {
+        display: none;
+        margin: 16px 0; padding: 16px 18px;
+        background: rgba(255,79,100,0.08); border: 1px solid rgba(255,79,100,0.25);
+        border-radius: var(--r); color: var(--text-2);
+      }
+      #setupBanner.visible { display: block; }
+      #setupBanner h3 {
+        font-size: 13px; font-weight: 600; color: var(--red);
+        margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+      }
+      #setupBanner p { font-size: 12px; line-height: 1.7; margin-bottom: 8px; }
+      #setupBanner code {
+        font-family: var(--mono); font-size: 11px;
+        background: var(--surface-3); padding: 2px 6px; border-radius: 3px;
+        color: var(--accent);
+      }
+
+      /* ── Pagination controls ── */
+      #paginationRow {
+        display: none;
+        align-items: center; justify-content: center; gap: 10px;
+        padding: 12px 0; margin-top: 4px;
+        border-top: 1px solid var(--border);
+      }
+      #paginationRow.visible { display: flex; }
+      #pageLabel {
+        font-family: var(--mono); font-size: 10px; color: var(--text-3);
+        min-width: 70px; text-align: center;
+      }
     </style>
   </head>
   <body>
-    <!-- Toast container -->
     <div id="toastContainer"></div>
-
-    <!-- Keyboard shortcut flash -->
     <div id="kbHint"></div>
 
+    <!-- Keyboard Shortcut Cheatsheet Modal -->
+    <div id="kbModal">
+      <div id="kbModalBox">
+        <h2>Keyboard Shortcuts <button onclick="el('kbModal').classList.remove('open')" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0"><i class="ph ph-x"></i></button></h2>
+        <div class="kb-grid">
+          <div class="kb-row"><span class="kb-key">Space</span><span class="kb-desc">Play / Pause</span></div>
+          <div class="kb-row"><span class="kb-key">S</span><span class="kb-desc">Stop</span></div>
+          <div class="kb-row"><span class="kb-key">N</span><span class="kb-desc">Next track</span></div>
+          <div class="kb-row"><span class="kb-key">P</span><span class="kb-desc">Previous track</span></div>
+          <div class="kb-row"><span class="kb-key">→</span><span class="kb-desc">Seek +10s</span></div>
+          <div class="kb-row"><span class="kb-key">←</span><span class="kb-desc">Seek -10s</span></div>
+          <div class="kb-row"><span class="kb-key">↑</span><span class="kb-desc">Volume +5%</span></div>
+          <div class="kb-row"><span class="kb-key">↓</span><span class="kb-desc">Volume -5%</span></div>
+          <div class="kb-row"><span class="kb-key">M</span><span class="kb-desc">Mute / Unmute</span></div>
+          <div class="kb-row"><span class="kb-key">L</span><span class="kb-desc">Open Lyrics</span></div>
+          <div class="kb-row"><span class="kb-key">/</span><span class="kb-desc">Focus Search</span></div>
+          <div class="kb-row"><span class="kb-key">?</span><span class="kb-desc">This dialog</span></div>
+          <div class="kb-row"><span class="kb-key">[</span><span class="kb-desc">Lyrics -0.5s</span></div>
+          <div class="kb-row"><span class="kb-key">]</span><span class="kb-desc">Lyrics +0.5s</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile bottom mini-player -->
+    <div id="mobilebar">
+      <div id="mobilebarProg"></div>
+      <img id="mobilebarThumb" src="" alt="" />
+      <div id="mobilebarInfo">
+        <div id="mobilebarTitle">Nothing playing</div>
+        <div id="mobilebarSub">—</div>
+      </div>
+      <button class="btn-ctrl secondary" id="mobilePrevBtn" title="Previous" style="width:34px;height:34px"><i class="ph ph-skip-back"></i></button>
+      <button class="btn-ctrl play-pause" id="mobilePlayBtn" title="Play/Pause" style="width:38px;height:38px;font-size:15px"><i class="ph ph-play"></i></button>
+      <button class="btn-ctrl secondary" id="mobileNextBtn" title="Next" style="width:34px;height:34px"><i class="ph ph-skip-forward"></i></button>
+    </div>
+
+    <!-- Mobile tab bar (replaces topbar tabs on small screens) -->
+    <div id="mobileTabBar">
+      <button data-tab="searchView" class="active"><i class="ph ph-magnifying-glass"></i>Search</button>
+      <button data-tab="playlistView"><i class="ph ph-playlist"></i>Playlists</button>
+      <button id="mobileSidebarBtn"><i class="ph ph-music-note"></i>Player</button>
+    </div>
+
     <div id="app">
-      <!-- TOP BAR -->
       <div id="topbar">
         <div id="logo">RESONANCE</div>
         <div id="searchBar">
@@ -988,6 +1130,7 @@
           <div id="searchSpinner"><span class="spinner-sm"></span></div>
         </div>
         <div id="topBarRight">
+          <button class="btn-icon btn-sm" id="kbHelpBtn" title="Keyboard shortcuts (?)"><i class="ph ph-keyboard"></i></button>
           <div id="tabNav">
             <button class="tab-btn active" data-tab="searchView">Search</button>
             <button class="tab-btn" data-tab="playlistView">Playlists</button>
@@ -995,23 +1138,39 @@
         </div>
       </div>
 
-      <!-- MAIN GRID -->
       <div id="main">
-        <!-- LEFT: tab views -->
         <div id="leftPanel">
-
-          <!-- SEARCH VIEW -->
           <div id="searchView" class="view active">
-            <!-- Recently played — visible only when search is empty -->
-            <div id="recentStrip" style="display:none">
+            <!-- Error recovery UI — shown when yt-dlp or mpv missing -->
+            <div id="setupBanner">
+              <h3><i class="ph ph-warning"></i> Setup Required</h3>
+              <p id="setupBannerMsg">A required tool is missing. Resonance needs both <code>yt-dlp</code> and <code>mpv</code> to play music.</p>
+              <p><strong>Windows (winget):</strong><br>
+                <code>winget install yt-dlp.yt-dlp</code><br>
+                <code>winget install mpv.net</code>
+              </p>
+              <p><strong>macOS (brew):</strong><br>
+                <code>brew install yt-dlp mpv</code>
+              </p>
+              <p><strong>Linux:</strong><br>
+                <code>sudo apt install mpv &amp;&amp; pip install yt-dlp</code>
+              </p>
+              <p style="margin-top:8px;font-size:11px;color:var(--text-3)">After installing, restart the server and refresh this page.</p>
+            </div>
+            <!-- FIX: removed inline style="display:none" — JS controls visibility -->
+            <div id="recentStrip">
               <h3>Recently Played</h3>
               <div id="recentCards"></div>
             </div>
             <div id="resultsCount"></div>
             <div id="results"></div>
+            <div id="paginationRow">
+              <button class="btn btn-ghost btn-sm" id="prevPageBtn"><i class="ph ph-caret-left"></i> Prev</button>
+              <span id="pageLabel">Page 1</span>
+              <button class="btn btn-ghost btn-sm" id="nextPageBtn">Next <i class="ph ph-caret-right"></i></button>
+            </div>
           </div>
 
-          <!-- PLAYLIST VIEW -->
           <div id="playlistView" class="view">
             <div class="pl-header">
               <h2>Playlists</h2>
@@ -1022,12 +1181,13 @@
             </div>
             <div id="playlistList"></div>
           </div>
-
         </div>
 
-        <!-- RIGHT SIDEBAR -->
         <div id="sidebar">
-          <!-- Now Playing Card -->
+          <div class="mobile-close-bar" style="display:none">
+            <button class="btn-icon" id="sidebarCloseBtn" title="Close"><i class="ph ph-x"></i></button>
+            <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)">NOW PLAYING</span>
+          </div>
           <div id="nowPlayingCard">
             <img id="npThumbnail" src="" alt="" />
             <div id="npLabel">
@@ -1043,7 +1203,7 @@
               <span class="time-label" id="curTime">0:00</span>
               <div id="progressTrack">
                 <div id="progressFill" style="width:0%"></div>
-                <input type="range" id="progress" min="0" max="0" value="0" step="1" id="progressInput" />
+                <input type="range" id="progressInput" min="0" max="0" value="0" step="1" />
               </div>
               <span class="time-label right" id="totalTime">—</span>
             </div>
@@ -1059,7 +1219,6 @@
               <input type="range" id="volume" min="0" max="100" value="70" />
               <span id="volNum" style="font-family:var(--mono);font-size:10px;color:var(--text-3);min-width:24px;text-align:right;">70</span>
             </div>
-            <!-- EQ presets -->
             <div id="eqSection">
               <label>EQ Preset <span id="eqLabel">Flat</span></label>
               <div id="eqBtns"></div>
@@ -1067,7 +1226,6 @@
             <div id="controlError"></div>
           </div>
 
-          <!-- Sidebar tabs -->
           <div id="sidebarTabs">
             <button class="stab active" data-stab="recs">Related</button>
             <button class="stab" data-stab="lyrics" id="lyricsTab">Lyrics</button>
@@ -1084,8 +1242,6 @@
       </div>
     </div>
 
-
-    <!-- AI CHAT -->
     <button id="chatToggle" title="Ask Resonance AI"><i class="ph ph-sparkle"></i></button>
     <div id="chatPanel">
       <div id="chatHead">
@@ -1105,25 +1261,43 @@
     <script>
     /* =====================================================================
        RESONANCE — Unified Frontend Script
-       Features: Lyrics (lrclib + lyrics.ovh), Keyboard Shortcuts,
-       Recently Played Strip, Toast Notifications, Queue Reordering,
-       Search History, Playlist Cover Art, Equalizer Presets
     ===================================================================== */
 
-    /* ── Utilities ─────────────────────────────── */
     const esc = t => String(t??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
     const fmt = s => { s=Math.max(0,s|0); return `${(s/60|0)}:${String(s%60).padStart(2,'0')}`; };
     const el = id => document.getElementById(id);
 
     async function api(path, opts={}) {
-      const r = await fetch(path, { ...opts, headers: {'Content-Type':'application/json', ...(opts.headers||{})} });
+      const headers = { ...(opts.headers||{}) };
+      if (opts.body) headers['Content-Type'] = 'application/json';
+      const r = await fetch(path, { ...opts, headers });
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || 'Request failed');
       return d;
     }
 
-    /* ── State ────────────────────────────────── */
+    /* ── FIX: Helper to create thumbnail img elements safely ── */
+    function makeThumb(src, w, h) {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.alt = '';
+      if (src && src.trim()) {
+        img.src = src;
+        img.onerror = () => {
+          img.removeAttribute('src');
+          img.style.background = 'var(--surface-3)';
+        };
+      } else {
+        img.style.background = 'var(--surface-3)';
+      }
+      if (w) img.style.width = w + 'px';
+      if (h) img.style.height = h + 'px';
+      return img;
+    }
+
+    /* ── State ── */
     let results = [], page = 0;
+    const PAGE_SIZE = 10;
     let lastStatus = 'idle';
     let lastPos = 0, lastDur = 0, lastUpdateTs = Date.now();
     let isSeeking = false;
@@ -1131,34 +1305,34 @@
     let currentTitle = '', currentUploader = '', currentThumb = '';
     let playlists = [];
     let expandedPl = null;
+    let lyricsOffset = 0;
 
     let generalQueue = [], gqIdx = 0, gqActive = false;
     let allRecs = [], recsIdx = 0;
     const RECS_BATCH = 10;
     let pollInterval = null;
 
-    /* ── localStorage helpers ──────────────────── */
     const lsGet = (k,d=null) => { try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v); }catch{return d;} };
     const lsSet = (k,v) => { try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} };
 
-    /* ════════════════════════════════════════════
-       FEATURE 1: TOAST NOTIFICATIONS
-    ════════════════════════════════════════════ */
+    /* ── Persistent volume ── */
+    const savedVol = lsGet('rq_volume', 70);
+    el('volume').value = savedVol;
+    el('volNum').textContent = savedVol;
+    // Apply to server on boot (non-fatal)
+    api('/api/volume', {method:'POST', body:JSON.stringify({level:savedVol})}).catch(()=>{});
+
+    /* ── Toast ── */
     function toast(msg, type='info', duration=2400) {
       const shelf = el('toastContainer');
-      // Limit to 3 visible toasts — remove oldest if exceeded
       const existing = shelf.querySelectorAll('.toast:not(.fade-out)');
       if (existing.length >= 3) existing[existing.length - 1].remove();
-
       const t = document.createElement('div');
       t.className = `toast ${type}`;
       const icons = { success:'<i class="ph ph-check"></i>', info:'<i class="ph ph-music-note"></i>', error:'<i class="ph ph-warning"></i>', warning:'<i class="ph ph-warning"></i>' };
       t.innerHTML = `<span class="toast-icon">${icons[type]||''}</span><span>${esc(msg)}</span>`;
       shelf.prepend(t);
-
-      // Dismiss on click
       t.addEventListener('click', () => dismiss(t));
-
       function dismiss(el) {
         if (el._dismissing) return;
         el._dismissing = true;
@@ -1168,9 +1342,7 @@
       setTimeout(() => dismiss(t), duration);
     }
 
-    /* ════════════════════════════════════════════
-       FEATURE 2: SEARCH HISTORY
-    ════════════════════════════════════════════ */
+    /* ── Search History ── */
     let searchHistory = lsGet('rq_search_history', []);
 
     function shAdd(q) {
@@ -1226,45 +1398,53 @@
       if (!el('searchBar').contains(e.target)) el('searchHistoryDrop').classList.remove('visible');
     });
 
-    /* ════════════════════════════════════════════
-       FEATURE 3: RECENTLY PLAYED STRIP
-    ════════════════════════════════════════════ */
+    /* ── FIX: Recently Played Strip ── */
     let recentlyPlayed = lsGet('rq_recent', []);
 
     function rpAdd(item) {
       if (!item?.id) return;
       recentlyPlayed = [
-        {id:item.id,title:item.title||'',uploader:item.uploader||'',thumbnail:item.thumbnail||''},
+        {id:item.id, title:item.title||'', uploader:item.uploader||'', thumbnail:item.thumbnail||''},
         ...recentlyPlayed.filter(x=>x.id!==item.id)
-      ].slice(0, 20);
+      ].slice(0, 15);
       lsSet('rq_recent', recentlyPlayed);
     }
 
     function renderRecentStrip() {
       const strip = el('recentStrip');
+      if (!strip) return;
       const q = el('searchInput').value.trim();
-      if (!recentlyPlayed.length || q) { strip.style.display='none'; return; }
+      // FIX: hide if search active or no items
+      if (!recentlyPlayed.length || q) {
+        strip.style.display = 'none';
+        return;
+      }
       strip.style.display = 'block';
       const cards = el('recentCards');
       cards.innerHTML = '';
       const frag = document.createDocumentFragment();
-      recentlyPlayed.slice(0, 12).forEach(item => {
-        const c = document.createElement('div'); c.className='recent-card'; c.title=item.title;
-        const img = document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt='';
-        img.width=150; img.height=84;
+      recentlyPlayed.slice(0, 15).forEach(item => {
+        const c = document.createElement('div');
+        c.className = 'recent-card';
+        c.title = item.title;
+        // FIX: use makeThumb helper — no broken image when thumbnail missing/expired
+        const img = makeThumb(item.thumbnail, 150, 84);
+        img.style.width = '150px';
+        img.style.height = '84px';
+        img.style.objectFit = 'cover';
+        img.style.display = 'block';
         const info = document.createElement('div'); info.className='recent-card-info';
         const tt = document.createElement('div'); tt.className='recent-card-title'; tt.textContent=item.title;
         const up = document.createElement('div'); up.className='recent-card-up'; up.textContent=item.uploader;
-        info.append(tt, up); c.append(img, info);
+        info.append(tt, up);
+        c.append(img, info);
         c.addEventListener('click', ()=>handlePlay(item.id, item));
         frag.appendChild(c);
       });
       cards.appendChild(frag);
     }
 
-    /* ════════════════════════════════════════════
-       FEATURE 4: KEYBOARD SHORTCUTS
-    ════════════════════════════════════════════ */
+    /* ── Keyboard Shortcuts ── */
     let kbHintTimer = null;
     function flashKbHint(msg) {
       const h = el('kbHint'); h.textContent = msg; h.classList.add('visible');
@@ -1316,19 +1496,34 @@
             flashKbHint(nv===0?'Muted':'Unmuted'); }
           break;
         case '/': e.preventDefault(); el('searchInput').focus(); flashKbHint('Search'); break;
-      }
+        case '?': el('kbModal').classList.add('open'); break;
+        case '[':
+          e.preventDefault();
+          lyricsOffset -= 0.5;
+          toast(`Lyrics Offset: ${lyricsOffset > 0 ? '+' : ''}${lyricsOffset}s`);
+          updateLyricHighlight(lastPos + (Date.now()-lastUpdateTs)/1000 + lyricsOffset, true);
+          break;
+        case ']':
+          e.preventDefault();
+          lyricsOffset += 0.5;
+          toast(`Lyrics Offset: ${lyricsOffset > 0 ? '+' : ''}${lyricsOffset}s`);
+          updateLyricHighlight(lastPos + (Date.now()-lastUpdateTs)/1000 + lyricsOffset, true);
+          break;
+        case 'Escape': el('kbModal').classList.remove('open'); break;
+            }
+      
     });
+    el('kbHelpBtn').addEventListener('click', () => el('kbModal').classList.add('open'));
+    el('kbModal').addEventListener('click', e => { if (e.target===el('kbModal')) el('kbModal').classList.remove('open'); });
 
-    /* ════════════════════════════════════════════
-       FEATURE 5: EQUALIZER PRESETS
-    ════════════════════════════════════════════ */
+    /* ── EQ Presets ── */
     const EQ_PRESETS = [
       { name:'Flat',    icon:'ph-equalizer', af:'' },
-      { name:'Bass+',   icon:'ph-waveform', af:'lavfi=[bass=g=6:f=110:w=0.6]' },
-      { name:'Treble+', icon:'ph-trend-up', af:'lavfi=[treble=g=5:f=3000:w=0.6]' },
-      { name:'Vocal',   icon:'ph-microphone', af:'lavfi=[equalizer=f=300:g=-3:w=200,equalizer=f=3500:g=4:w=2000]' },
-      { name:'Lo-Fi',   icon:'ph-radio', af:'lavfi=[lowpass=f=3000,volume=0.9]' },
-      { name:'Night',   icon:'ph-moon', af:'lavfi=[bass=g=4:f=110,treble=g=-3:f=3000,volume=0.8]' },
+      { name:'Bass+',   icon:'ph-waveform',  af:'lavfi=[bass=g=6:f=110:w=0.6]' },
+      { name:'Treble+', icon:'ph-trend-up',  af:'lavfi=[treble=g=5:f=3000:w=0.6]' },
+      { name:'Vocal',   icon:'ph-microphone',af:'lavfi=[equalizer=f=300:g=-3:width=200,equalizer=f=3500:g=4:width=2000]' },
+      { name:'Lo-Fi',   icon:'ph-radio',     af:'lavfi=[lowpass=f=3000,volume=0.9]' },
+      { name:'Night',   icon:'ph-moon',      af:'lavfi=[bass=g=4:f=110,treble=g=-3:f=3000,volume=0.8]' },
     ];
     let activeEq = lsGet('rq_eq', 'Flat');
 
@@ -1351,22 +1546,97 @@
       toast(`EQ: ${preset.name}`, 'info');
     }
     buildEqButtons();
+    // Restore saved EQ on boot — player.js saves it for next spawn even if idle now
+    { const saved = EQ_PRESETS.find(p=>p.name===activeEq);
+      if (saved && saved.name !== 'Flat') api('/api/eq',{method:'POST',body:JSON.stringify({filters:saved.af})}).catch(()=>{}); }
 
-    /* ════════════════════════════════════════════
-       FEATURE 6: LYRICS PANEL (lrclib + lyrics.ovh)
-    ════════════════════════════════════════════ */
-    // ── Lyrics state ─────────────────────────────────────────────
+    /* ── Lyrics ── */
     let syncedLines = [], lastLyrIdx = -1;
-    let lyricsLoadedForId = null;   // track id lyrics were fetched for
-    let lyricsLoadedAtPos = 0;      // song position when lyrics finished loading
+    let lyricNodes = [];
+    let lyricsLoadedForId = null;
+    const lyricsCache = new Map(); // trackId → { type, syncedLines, raw, ct, ca }
 
-    function cleanLyricsText(t) {
-      return t.replace(/\(official.*?\)/gi,'').replace(/\[.*?\]/g,'')
-              .replace(/official\s*(video|audio|lyric|music video)/gi,'')
-              .replace(/\s+/g,' ').trim();
+    // ── Lyrics helpers ──────────────────────────────────────────────────
+
+    // ── Lyrics title/artist cleaning ─────────────────────────────────────
+
+    // Aggressively strip YouTube title junk to get a clean song name
+    function cleanLyricsTitle(t) {
+          return t
+            .replace(/【.*?】/g, '') // Remove thick brackets and their contents
+            .replace(/「(.*?)」/g, ' $1 ') // Extract text from Japanese quotes
+            .replace(/『(.*?)』/g, ' $1 ')
+            .replace(/[\(\[][^\)\]]*?(?:official|lyrics?|audio|video|music.?video|visualizer|hd|4k|remaster(?:ed)?|slowed|reverb|nightcore|sped.?up|extended|instrumental|karaoke|cover|live|acoustic|radio.?edit|explicit|clean|feat\.?|ft\.?|prod\.?|ost|soundtrack|op|ed|opening|ending)[^\)\]]*?[\)\]]/gi, '')
+            .replace(/\s*\|.*$/g, '')
+            .replace(/[\)\]]\s+[a-z].{3,}$/i, match => match.match(/[\)\]]/) ? match.match(/[\)\]]/)[0] : '')
+            .replace(/\s*[-–—:]\s*(?:official\s*)?(?:music\s*)?(?:video|audio|lyrics?|visualizer|hd|4k|remastered?|slowed|reverb|nightcore|sped.?up)\s*$/gi, '')
+            .replace(/\s+(?:feat|ft)\.?\s+.*/gi, '')
+            .replace(/\s*\(prod\..*?\)/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+        }
+    // Strip YouTube channel noise from uploader name
+    function cleanLyricsArtist(a) {
+      return a
+        .replace(/\s*-\s*Topic$/i, '')
+        .replace(/\s*VEVO$/i, '')
+        .replace(/\s*Official(?:\s*Music)?$/i, '')
+        .replace(/\s*Music$/i, '')
+        .replace(/\s*Records?$/i, '')
+        .replace(/\s*Entertainment$/i, '')
+        .trim();
     }
 
-    // Called whenever user clicks the Lyrics tab OR L key
+    // Parse "Artist – Song Title (junk)" YouTube titles
+    // Returns multiple candidate {artist, title} pairs to try in order
+    function parseYouTubeTitle(rawTitle, rawArtist) {
+      const candidates = [];
+
+      const dashMatch = rawTitle.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+      if (dashMatch) {
+        const leftArtist = cleanLyricsArtist(dashMatch[1].trim());
+        const rightTitle = cleanLyricsTitle(dashMatch[2].trim());
+        const titleWords = /verse|chorus|intro|outro|remix|edit|version|mix/i;
+        if (leftArtist.length < 60 && !titleWords.test(leftArtist)) {
+          candidates.push({ artist: leftArtist, title: rightTitle });
+          candidates.push({ artist: cleanLyricsArtist(rawArtist), title: rightTitle });
+        }
+      }
+
+      candidates.push({ artist: cleanLyricsArtist(rawArtist), title: cleanLyricsTitle(rawTitle) });
+      
+      // FIX: Add a generic candidate with no artist for maximum fuzziness
+      candidates.push({ artist: '', title: cleanLyricsTitle(rawTitle) }); 
+
+      const seen = new Set();
+      return candidates.filter(c => {
+        const key = c.artist + '|' + c.title;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return c.title.length > 0;
+      });
+    }
+
+    // Score how well a lrclib result matches our target (higher = better)
+    function scoreLyricsMatch(result, targetTitle, targetArtist) {
+      const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+      const tTitle  = norm(targetTitle);
+      const tArtist = norm(targetArtist);
+      const rTitle  = norm(result.trackName);
+      const rArtist = norm(result.artistName);
+
+      let score = 0;
+      if (rTitle === tTitle)                                          score += 0.60;
+      else if (rTitle.startsWith(tTitle) || tTitle.startsWith(rTitle)) score += 0.40;
+      else if (rTitle.includes(tTitle) || tTitle.includes(rTitle))     score += 0.25;
+
+      if (rArtist === tArtist)                                        score += 0.40;
+      else if (rArtist.includes(tArtist) || tArtist.includes(rArtist)) score += 0.20;
+
+      if (result.syncedLyrics) score += 0.05;
+      return score;
+    }
+
     function openLyrics() {
       document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));
       const lt = el('lyricsTab'); if(lt) lt.classList.add('active');
@@ -1374,70 +1644,146 @@
       el('sideLyrics').classList.remove('hidden');
       el('sideQueue').classList.add('hidden');
       el('sideHistory').classList.add('hidden');
-
-      // Only re-fetch if song changed
-      if (playingId && playingId !== lyricsLoadedForId) {
-        loadLyrics(currentTitle, currentUploader, playingId);
+      if (playingId) {
+        // Always reload if different track; cache will make it instant
+        if (playingId !== lyricsLoadedForId) {
+          loadLyrics(currentTitle, currentUploader, playingId);
+        }
+      } else {
+        el('lyricsWrap').innerHTML = '<div id="lyricsMsg">Play a song to see lyrics.</div>';
       }
     }
 
     async function loadLyrics(title, artist, trackId) {
       lyricsLoadedForId = trackId;
       syncedLines = []; lastLyrIdx = -1;
+      lyricsOffset = 0;
       const wrap = el('lyricsWrap');
+
+      // Instant cache hit — no network request needed
+      if (lyricsCache.has(trackId)) {
+        const cached = lyricsCache.get(trackId);
+        if (cached === null) {
+          wrap.innerHTML = '<div id="lyricsMsg">No lyrics found for this track.</div>';
+          return;
+        }
+        if (cached.type === 'synced') {
+          syncedLines = cached.syncedLines;
+          renderSyncedLyrics(cached.ct, cached.ca);
+        } else {
+          renderPlainLyrics(cached.ct, cached.ca, cached.raw);
+        }
+        return;
+      }
+
       wrap.innerHTML = '<div id="lyricsMsg">Searching for lyrics…</div>';
 
-      const ct = cleanLyricsText(title);
-      const ca = artist.replace(/\s*-\s*Topic$/, '').trim();
+      // Get multiple candidate (artist, title) pairs to try — handles YouTube junk titles
+      const candidates = parseYouTubeTitle(title, artist);
 
-      // Try lrclib first (has synced lyrics)
+      // Try lrclib search for a given artist+title pair, return best scored match
+async function lrclibSearch(ct, ca) {
+        let q = encodeURIComponent(`${ca} ${ct}`.trim());
+        let r = await fetch(`https://lrclib.net/api/search?q=${q}`);
+        let data = r.ok ? await r.json() : [];
+        
+        // FIX: If search with artist fails, try just the title
+        if (!Array.isArray(data) || !data.length) {
+            q = encodeURIComponent(ct.trim());
+            r = await fetch(`https://lrclib.net/api/search?q=${q}`);
+            data = r.ok ? await r.json() : [];
+        }
+
+        if (!Array.isArray(data) || !data.length) throw new Error('no results');
+        
+        const scored = data
+          .filter(t => t.plainLyrics || t.syncedLyrics)
+          .map(t => ({ t, score: scoreLyricsMatch(t, ct, ca) }))
+          .sort((a, b) => b.score - a.score);
+          
+        if (!scored.length) throw new Error('no lyrics');
+        if (scored[0].score < 0.2) throw new Error('no good match');
+        
+        const best = scored[0].t;
+        if (best.syncedLyrics) return { type: 'synced', raw: best.syncedLyrics, ct, ca };
+        return { type: 'plain', raw: best.plainLyrics, ct, ca };
+      }
+
+      async function lrclibGet(ct, ca) {
+        if (!ca) throw new Error('no artist');
+        const r = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(ca)}&track_name=${encodeURIComponent(ct)}`);
+        if (!r.ok) throw new Error('lrclib get failed');
+        const d = await r.json();
+        if (d.syncedLyrics) return { type: 'synced', raw: d.syncedLyrics, ct, ca };
+        if (d.plainLyrics)  return { type: 'plain',  raw: d.plainLyrics, ct, ca };
+        throw new Error('no lyrics');
+      }
+
+      async function fromOvh(ct, ca) {
+        const r = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(ca)}/${encodeURIComponent(ct)}`);
+        if (!r.ok) throw new Error('ovh failed');
+        const d = await r.json();
+        if (d.lyrics) return { type: 'plain', raw: d.lyrics, ct, ca };
+        throw new Error('no lyrics');
+      }
+
+      // FIX: Parallel fetch for speed — race lrclibGet and lrclibSearch simultaneously
       try {
-        const r = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(ct)}&artist_name=${encodeURIComponent(ca)}`);
-        if (r.ok) {
-          const data = await r.json();
-          if (Array.isArray(data) && data.length) {
-            const track = data.find(t=>t.syncedLyrics) || data[0];
-            if (track.syncedLyrics) {
-              syncedLines = track.syncedLyrics.split('\n').map(l=>{
-                const m = l.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)/);
-                return m ? {t: parseInt(m[1])*60 + parseFloat(m[2]), text: m[3].trim()} : null;
-              }).filter(Boolean);
-              if (syncedLines.length) {
-                // Record the song position at load-complete time for sync offset
-                lyricsLoadedAtPos = lastPos + (Date.now()-lastUpdateTs)/1000;
-                renderSyncedLyrics(ct, ca);
-                return;
-              }
-            }
-            if (track.plainLyrics) {
-              renderPlainLyrics(ct, ca, track.plainLyrics);
+        let result = null;
+
+        // 1. Fire exact GET and fuzzy search in parallel for the top candidates
+        const exactPromises = candidates
+          .filter(c => c.artist)
+          .slice(0, 2)
+          .map(({ artist: ca, title: ct }) => lrclibGet(ct, ca).catch(() => null));
+
+        const searchPromises = candidates
+          .slice(0, 2)
+          .map(({ artist: ca, title: ct }) => lrclibSearch(ct, ca).catch(() => null));
+
+        // Race exact matches first (they're more accurate)
+        const exactResults = await Promise.all(exactPromises);
+        result = exactResults.find(Boolean) || null;
+
+        if (!result) {
+          const searchResults = await Promise.all(searchPromises);
+          result = searchResults.find(Boolean) || null;
+        }
+
+        // 2. OVH fallback — try all artist candidates
+        if (!result) {
+          for (const { artist: ca, title: ct } of candidates) {
+            if (ca) { try { result = await fromOvh(ct, ca); break; } catch {} }
+          }
+        }
+
+        if (result) {
+          if (result.type === 'synced') {
+            syncedLines = result.raw.split('\n').map(l => {
+              const m = l.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)/);
+              return m ? { t: parseInt(m[1]) * 60 + parseFloat(m[2]), text: m[3].trim() } : null;
+            }).filter(Boolean);
+            if (syncedLines.length) {
+              lyricsCache.set(trackId, { type: 'synced', syncedLines: [...syncedLines], ct: result.ct, ca: result.ca });
+              renderSyncedLyrics(result.ct, result.ca);
               return;
             }
+            const plainText = result.raw.replace(/\[\d+:\d+\.\d+\]/g, '').trim();
+            lyricsCache.set(trackId, { type: 'plain', raw: plainText, ct: result.ct, ca: result.ca });
+            renderPlainLyrics(result.ct, result.ca, plainText);
+            return;
+          }
+          if (result.type === 'plain') {
+            lyricsCache.set(trackId, { type: 'plain', raw: result.raw, ct: result.ct, ca: result.ca });
+            renderPlainLyrics(result.ct, result.ca, result.raw);
+            return;
           }
         }
       } catch {}
 
-      // Try server proxy (lrclib + lyrics.ovh)
-      try {
-        const r = await fetch(`/api/lyrics?artist=${encodeURIComponent(ca)}&title=${encodeURIComponent(ct)}`);
-        if (r.ok) {
-          const d = await r.json();
-          if (d.ok && d.lyrics) { renderPlainLyrics(ct, ca, d.lyrics); return; }
-        }
-      } catch {}
-
-      // Final fallback: lyrics.ovh
-      try {
-        const r2 = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(ca)}/${encodeURIComponent(ct)}`);
-        if (r2.ok) {
-          const d2 = await r2.json();
-          if (d2.lyrics) { renderPlainLyrics(ct, ca, d2.lyrics); return; }
-        }
-      } catch {}
-
+      lyricsCache.set(trackId, null); // Cache miss so we don't retry on tab switch
       wrap.innerHTML = '<div id="lyricsMsg">No lyrics found for this track.</div>';
     }
-
     function renderPlainLyrics(title, artist, text) {
       const wrap = el('lyricsWrap');
       wrap.innerHTML = `
@@ -1451,58 +1797,69 @@
     function renderSyncedLyrics(title, artist) {
       const wrap = el('lyricsWrap');
       wrap.innerHTML = `<div class="lyrics-meta"><div class="lyrics-title">${esc(title)}</div><div class="lyrics-artist">${esc(artist)}</div></div>`;
-      const linesWrap = document.createElement('div'); linesWrap.id='lyricsLinesWrap';
-      syncedLines.forEach((l, i)=>{
-        if (!l.text) return; // skip blank timestamp lines
-        const d = document.createElement('div'); d.className='lyric-line'; d.dataset.li=i;
+      const linesWrap = document.createElement('div'); linesWrap.id = 'lyricsLinesWrap';
+
+      // Build DOM and pre-index nodes for O(1) access — no querySelectorAll on every tick
+      lyricNodes = [];
+      syncedLines.forEach((l, i) => {
+        if (!l.text) { lyricNodes.push(null); return; }
+        const d = document.createElement('div');
+        d.className = 'lyric-line';
+        d.dataset.li = i;
         d.textContent = l.text;
         linesWrap.appendChild(d);
+        lyricNodes.push(d);
       });
+
       wrap.appendChild(linesWrap);
-      // Immediately highlight at current position
-      const pos = lastPos + (Date.now()-lastUpdateTs)/1000;
+      lastLyrIdx = -1;
+      const pos = lastPos + (Date.now() - lastUpdateTs) / 1000;
       updateLyricHighlight(pos, true);
     }
 
-    function updateLyricHighlight(pos, immediate=false) {
-      if (!syncedLines.length) return;
-      const wrap = el('lyricsLinesWrap'); if (!wrap) return;
+    // Pre-indexed lyric DOM nodes — avoids querySelectorAll on every rAF tick
 
-      // Find the line whose timestamp <= current position
-      let idx = -1;
-      for (let i=0; i<syncedLines.length; i++) {
-        if (syncedLines[i].t <= pos) idx = i;
-        else break;
+    function updateLyricHighlight(pos, immediate = false) {
+      if (!syncedLines.length || !lyricNodes.length) return;
+      const wrap = el('lyricsLinesWrap');
+      if (!wrap) return;
+
+      // Binary search for current line — O(log n) instead of O(n)
+      let lo = 0, hi = syncedLines.length - 1, idx = 0;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (syncedLines[mid].t <= pos) { idx = mid; lo = mid + 1; }
+        else hi = mid - 1;
       }
-      if (idx < 0) idx = 0;
+
       if (idx === lastLyrIdx) return;
+      const prev = lastLyrIdx;
       lastLyrIdx = idx;
 
-      const allLines = wrap.querySelectorAll('.lyric-line');
-      // Map visible lyric-line index to syncedLines index
-      // (we skipped blank lines when rendering, so use data-li)
-      allLines.forEach(el2=>{
-        const li = parseInt(el2.dataset.li);
-        el2.classList.toggle('lyr-active', li===idx);
-        el2.classList.toggle('lyr-near', li===idx-1||li===idx+1);
-      });
-      const active = wrap.querySelector('.lyr-active');
-      if (active) active.scrollIntoView({block:'center', behavior: immediate?'instant':'smooth'});
+      // Update only the nodes that changed — not all of them
+      if (prev >= 0 && prev < lyricNodes.length && lyricNodes[prev]) {
+        lyricNodes[prev].classList.remove('lyr-active', 'lyr-near');
+      }
+      if (prev - 1 >= 0 && lyricNodes[prev - 1]) lyricNodes[prev - 1].classList.remove('lyr-near');
+      if (prev + 1 < lyricNodes.length && lyricNodes[prev + 1]) lyricNodes[prev + 1].classList.remove('lyr-near');
+
+      if (lyricNodes[idx]) {
+        lyricNodes[idx].classList.add('lyr-active');
+        lyricNodes[idx].classList.remove('lyr-near');
+      }
+      if (idx - 1 >= 0 && lyricNodes[idx - 1]) { lyricNodes[idx - 1].classList.remove('lyr-active'); lyricNodes[idx - 1].classList.add('lyr-near'); }
+      if (idx + 1 < lyricNodes.length && lyricNodes[idx + 1]) { lyricNodes[idx + 1].classList.remove('lyr-active'); lyricNodes[idx + 1].classList.add('lyr-near'); }
+
+      const active = lyricNodes[idx];
+      if (active) active.scrollIntoView({ block: 'center', behavior: immediate ? 'instant' : 'smooth' });
     }
 
-    // Sync loop — runs every 250ms; uses interpolated position to stay smooth
-    setInterval(()=>{
-      if (!syncedLines.length) return;
-      const proj = lastPos + (Date.now()-lastUpdateTs)/1000;
-      updateLyricHighlight(proj);
-    }, 250);
+    // Lyrics are driven by the rAF tick (defined below) — no separate setInterval needed
 
-    // When a song starts playing, invalidate cached lyrics if track changed
     function onTrackChanged(id) {
       if (id !== lyricsLoadedForId) {
         lyricsLoadedForId = null;
-        syncedLines = []; lastLyrIdx = -1;
-        // If lyrics tab is visible, auto-reload for new track
+        syncedLines = []; lastLyrIdx = -1; lyricNodes = [];
         const lt = el('lyricsTab');
         if (lt && lt.classList.contains('active')) {
           loadLyrics(currentTitle, currentUploader, id);
@@ -1510,24 +1867,14 @@
       }
     }
 
-    /* ════════════════════════════════════════════
-       FEATURE 7: PLAYLIST COVER ART
-    ════════════════════════════════════════════ */
-    // Handled inside renderPlaylists / loadPlaylistTracks below
-
-    /* ════════════════════════════════════════════
-       FEATURE 8: QUEUE REORDERING (drag-and-drop)
-    ════════════════════════════════════════════ */
-    // Handled inside renderQueuePanel below
-
-    /* ── DOM refs ─────────────────────────────── */
+    /* ── DOM refs ── */
     const npThumbnail = el('npThumbnail');
     const npDot = el('npDot');
     const npStatusText = el('npStatusText');
     const npTitle = el('npTitle');
     const npUploader = el('npUploader');
     const progressFill = el('progressFill');
-    const progressInput = el('progress');
+    const progressInput = el('progressInput');
     const curTimeEl = el('curTime');
     const totalTimeEl = el('totalTime');
     const playPauseBtn = el('playPauseBtn');
@@ -1537,7 +1884,7 @@
     const sideQueue = el('sideQueue');
     const sideHistory = el('sideHistory');
 
-    /* ── Tab navigation ───────────────────────── */
+    /* ── Tab navigation ── */
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1566,28 +1913,29 @@
       });
     });
 
-    /* ── Search ───────────────────────────────── */
+    /* ── Search ── */
     let searchDebounce = null;
     let searchSeq = 0;
 
     el('searchInput').addEventListener('input', () => {
-      clearTimeout(searchDebounce);
       const q = el('searchInput').value.trim();
-      el('searchHistoryDrop').classList.remove('visible');
       if (!q) {
         clearResults();
         renderRecentStrip();
+        // Show search history dropdown when field is empty
         if (searchHistory.length) renderShDrop('');
+        else el('searchHistoryDrop').classList.remove('visible');
         return;
       }
-      el('recentStrip').style.display = 'none';
+      // While typing: only update the history dropdown suggestions, never auto-search
       renderShDrop(q);
-      showSkeleton();
-      searchDebounce = setTimeout(doSearch, 380);
     });
     el('searchInput').addEventListener('keydown', e => {
-      if (e.key==='Enter') { clearTimeout(searchDebounce); el('searchHistoryDrop').classList.remove('visible'); doSearch(); }
-      if (e.key==='Escape') { el('searchHistoryDrop').classList.remove('visible'); }
+      if (e.key === 'Enter') {
+        el('searchHistoryDrop').classList.remove('visible');
+        doSearch();
+      }
+      if (e.key === 'Escape') { el('searchHistoryDrop').classList.remove('visible'); }
     });
     el('searchClear').addEventListener('click', () => {
       el('searchInput').value = '';
@@ -1599,6 +1947,7 @@
       results=[]; page=0;
       resultsEl.innerHTML='';
       el('resultsCount').innerHTML='';
+      el('paginationRow').classList.remove('visible');
     }
     function showSkeleton() {
       resultsEl.innerHTML = Array(6).fill(0).map(()=>`
@@ -1619,6 +1968,7 @@
       el('recentStrip').style.display = 'none';
       el('searchSpinner').style.display = 'block';
       el('searchClear').style.display = 'none';
+      showSkeleton();
       try {
         const d = await api(`/api/search?q=${encodeURIComponent(q)}&limit=30`);
         if (seq!==searchSeq) return;
@@ -1627,24 +1977,43 @@
       } catch(err) {
         if (seq!==searchSeq) return;
         resultsEl.innerHTML = `<div class="error" style="padding:12px">${esc(err.message)}</div>`;
+        el('paginationRow').classList.remove('visible');
       } finally {
         if (seq===searchSeq) { el('searchSpinner').style.display='none'; el('searchClear').style.display=''; }
       }
     }
     function renderResults() {
+      const totalPages = Math.ceil(results.length / PAGE_SIZE);
       el('resultsCount').innerHTML = results.length
         ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text-3)">${results.length} results</span><span class="bar"></span>`
         : '';
       resultsEl.innerHTML = '';
       const frag = document.createDocumentFragment();
-      results.forEach(item => frag.appendChild(buildResultRow(item)));
+      const pageSlice = results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+      pageSlice.forEach(item => frag.appendChild(buildResultRow(item)));
       resultsEl.appendChild(frag);
+
+      // Pagination
+      if (results.length > PAGE_SIZE) {
+        el('paginationRow').classList.add('visible');
+        el('pageLabel').textContent = `Page ${page + 1} of ${totalPages}`;
+        el('prevPageBtn').disabled = page === 0;
+        el('nextPageBtn').disabled = page >= totalPages - 1;
+      } else {
+        el('paginationRow').classList.remove('visible');
+      }
     }
+    el('prevPageBtn').addEventListener('click', () => { if (page > 0) { page--; renderResults(); resultsEl.scrollIntoView({behavior:'smooth', block:'start'}); } });
+    el('nextPageBtn').addEventListener('click', () => { if ((page + 1) * PAGE_SIZE < results.length) { page++; renderResults(); resultsEl.scrollIntoView({behavior:'smooth', block:'start'}); } });
     function buildResultRow(item) {
       const row = document.createElement('div');
       row.className = 'result-row'+(playingId===item.id?' playing':'');
       row.dataset.id = item.id;
-      const img = document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt=''; img.width=68; img.height=38;
+      // FIX: use makeThumb for result thumbnails too
+      const img = makeThumb(item.thumbnail, 68, 38);
+      img.style.borderRadius = 'var(--r-sm)';
+      img.style.objectFit = 'cover';
+      img.style.flexShrink = '0';
       const info = document.createElement('div'); info.className='result-info';
       const t = document.createElement('div'); t.className='result-title'; t.textContent=item.title||'Untitled';
       const m = document.createElement('div'); m.className='result-meta';
@@ -1667,7 +2036,7 @@
       return row;
     }
 
-    /* ── Playlist dropdown ────────────────────── */
+    /* ── Playlist dropdown ── */
     function buildPlaylistDropdown(item) {
       const wrap = document.createElement('div'); wrap.className='dropdown-wrap';
       const btn = document.createElement('button'); btn.className='btn-icon btn-sm'; btn.textContent='+'; btn.title='Add to playlist';
@@ -1696,15 +2065,19 @@
       wrap.appendChild(btn); return wrap;
     }
 
-    /* ── Play handling ────────────────────────── */
+    /* ── Play handling ── */
     async function handlePlay(id, itemMeta) {
       if (pendingId) return;
       controlError.textContent='';
       pendingId = id;
+
+      lastPos = 0; 
+      lastDur = itemMeta ? (itemMeta.durationSeconds || 0) : 0;
       if (itemMeta) {
         npTitle.textContent=itemMeta.title||'Loading…';
         npUploader.textContent=itemMeta.uploader||'';
-        npThumbnail.src=itemMeta.thumbnail||'';
+        // FIX: only set thumbnail src if valid
+        if (itemMeta.thumbnail) npThumbnail.src=itemMeta.thumbnail;
         currentTitle=itemMeta.title||'';
         currentUploader=itemMeta.uploader||'';
         currentThumb=itemMeta.thumbnail||'';
@@ -1722,8 +2095,8 @@
         if (resp.result?.meta) {
           const meta = resp.result.meta;
           currentTitle=meta.title||''; currentUploader=meta.uploader||''; currentThumb=meta.thumbnail||'';
-          npTitle.textContent=currentTitle; npUploader.textContent=currentUploader; npThumbnail.src=currentThumb;
-          // Update queue entry with real meta
+          npTitle.textContent=currentTitle; npUploader.textContent=currentUploader;
+          if (meta.thumbnail) npThumbnail.src=meta.thumbnail;
           if (generalQueue[gqIdx]) {
             generalQueue[gqIdx]={id:meta.id||id,title:meta.title||itemMeta?.title||'',uploader:meta.uploader||'',duration:meta.duration,thumbnail:meta.thumbnail||''};
           }
@@ -1733,8 +2106,14 @@
           toast(currentTitle, 'success');
         }
         setAdaptivePoll('playing');
+        schedulePrefetch(); // Pre-warm next track metadata immediately
         if (currentTitle) { loadRecs(currentTitle, currentUploader); }
-        if (el('lyricsTab')?.classList.contains('active') && currentTitle) loadLyrics(currentTitle, currentUploader, playingId);
+        // Pre-fetch lyrics silently (will be cached for instant display)
+        if (playingId && !lyricsCache.has(playingId)) {
+          loadLyrics(currentTitle, currentUploader, playingId);
+        } else if (el('lyricsTab')?.classList.contains('active') && currentTitle) {
+          loadLyrics(currentTitle, currentUploader, playingId);
+        }
         loadHistory();
       } catch(err) {
         controlError.textContent=err.message; npStatusText.textContent='ERROR';
@@ -1746,18 +2125,24 @@
     }
 
     async function internalPlay(id) {
-      pendingId=id;
+      pendingId = id;
+      lastPos = 0;
+      lastDur = 0;
       try {
-        await api('/api/play',{method:'POST',body:JSON.stringify({id})});
-        playingId=id;
+        await api('/api/play', { method: 'POST', body: JSON.stringify({ id }) });
+        playingId = id;
         await refreshStatus();
-        if (currentTitle) { loadRecs(currentTitle, currentUploader); if(el('lyricsTab')?.classList.contains('active')) loadLyrics(currentTitle, currentUploader, playingId); }
+        schedulePrefetch(); // Pre-warm next track immediately after this one starts
+        if (currentTitle) {
+          loadRecs(currentTitle, currentUploader);
+          if (el('lyricsTab')?.classList.contains('active')) loadLyrics(currentTitle, currentUploader, playingId);
+        }
         loadHistory();
-      } catch(err){ controlError.textContent=err.message; }
-      finally { pendingId=null; }
+      } catch(err) { controlError.textContent = err.message; }
+      finally { pendingId = null; }
     }
 
-    /* ── Controls ─────────────────────────────── */
+    /* ── Controls ── */
     async function postCtrl(path, body) {
       controlError.textContent='';
       try { await api(path,{method:'POST',body:body?JSON.stringify(body):undefined}); await refreshStatus(); }
@@ -1765,36 +2150,84 @@
     }
 
     playPauseBtn.addEventListener('click', ()=>{
-      if (lastStatus==='playing') { lastStatus='paused'; playPauseBtn.innerHTML='▶'; postCtrl('/api/pause'); }
-      else { lastStatus='playing'; playPauseBtn.innerHTML='<i class="ph ph-pause"></i>'; postCtrl('/api/resume'); }
+      if (lastStatus==='playing') { lastStatus='paused'; playPauseBtn.innerHTML='<i class="ph ph-play"></i>'; postCtrl('/api/pause'); }
+      else if (lastStatus==='paused') { lastStatus='playing'; playPauseBtn.innerHTML='<i class="ph ph-pause"></i>'; postCtrl('/api/resume'); }
+      else {
+        // Idle — try to play from queue or recently played
+        if (generalQueue.length && gqIdx < generalQueue.length) {
+          gqActive = true;
+          const track = generalQueue[gqIdx];
+          if (track) handlePlay(track.id, track);
+        } else if (recentlyPlayed.length) {
+          const track = recentlyPlayed[0];
+          handlePlay(track.id, track);
+        }
+      }
     });
     el('stopBtn').addEventListener('click', async ()=>{
       try {
         await api('/api/stop',{method:'POST'});
         lastStatus='idle'; playingId=null; gqActive=false;
+        lastPos=0; lastDur=0; lastUpdateTs=Date.now();
+        lyricsLoadedForId=null; syncedLines=[]; lastLyrIdx=-1;
+        playPauseBtn.innerHTML='<i class="ph ph-play"></i>';
+        el('mobilePlayBtn').innerHTML='<i class="ph ph-play"></i>';
         updatePlayerUI({status:'idle',position:0,durationSeconds:0,meta:null});
         renderQueuePanel();
       } catch(err){ controlError.textContent=err.message; }
     });
-    el('prevBtn').addEventListener('click', async ()=>{
-      if (!generalQueue.length||gqIdx<=0) { showCtrlMsg('No previous song'); return; }
-      try {
-        await api('/api/stop',{method:'POST'}); await waitForIdle(4000);
-        gqIdx--; renderQueuePanel();
-        const prev=generalQueue[gqIdx]; if(prev){ gqActive=true; await internalPlay(prev.id); }
-      } catch(err){ controlError.textContent=err.message; }
+    el('prevBtn').addEventListener('click', async () => {
+      // If we're more than 3s into the track, seek to start instead of going back
+      if (playingId && lastPos > 3) {
+        try { await api('/api/seek',{method:'POST',body:JSON.stringify({position:0})}); lastPos=0; lastUpdateTs=Date.now(); }
+        catch(err){ controlError.textContent=err.message; }
+        return;
+      }
+      if (!generalQueue.length || gqIdx <= 0) {
+        // At start of queue — seek to beginning of current track
+        if (playingId) {
+          try { await api('/api/seek',{method:'POST',body:JSON.stringify({position:0})}); lastPos=0; lastUpdateTs=Date.now(); }
+          catch(err){ controlError.textContent=err.message; }
+        } else { showCtrlMsg('No previous song'); }
+        return;
+      }
+      gqIdx--;
+      gqActive = true;
+      renderQueuePanel();
+      const prev = generalQueue[gqIdx];
+      if (prev) await internalPlay(prev.id);
     });
-    el('nextBtn').addEventListener('click', async ()=>{
-      if (!generalQueue.length||gqIdx>=generalQueue.length-1) { showCtrlMsg('No next song'); return; }
-      try {
-        await api('/api/stop',{method:'POST'}); await waitForIdle(4000);
-        gqIdx++; renderQueuePanel();
-        const next=generalQueue[gqIdx]; if(next){ gqActive=true; await internalPlay(next.id); }
-      } catch(err){ controlError.textContent=err.message; }
+    el('nextBtn').addEventListener('click', async () => {
+      if (!generalQueue.length || gqIdx >= generalQueue.length - 1) { showCtrlMsg('No next song'); return; }
+      gqIdx++;
+      gqActive = true;
+      renderQueuePanel();
+      const next = generalQueue[gqIdx];
+      if (next) await internalPlay(next.id);
     });
-    el('volume').addEventListener('input', e=>{
-      el('volNum').textContent=e.target.value;
-      api('/api/volume',{method:'POST',body:JSON.stringify({level:e.target.value})}).catch(()=>{});
+    let volThrottleInFlight = false;
+    let volPendingLevel = null;
+    function sendVolume(level) {
+      lsSet('rq_volume', Number(level));
+      if (volThrottleInFlight) { volPendingLevel = level; return; }
+      volThrottleInFlight = true;
+      api('/api/volume', { method: 'POST', body: JSON.stringify({ level: Number(level) }) })
+        .catch(() => {})
+        .finally(() => {
+          volThrottleInFlight = false;
+          if (volPendingLevel !== null) {
+            const next = volPendingLevel; volPendingLevel = null; sendVolume(next);
+          }
+        });
+    }
+    el('volume').addEventListener('input', e => {
+      const level = e.target.value;
+      el('volNum').textContent = level;
+      sendVolume(level);
+    });
+    el('volume').addEventListener('change', e => {
+      const level = e.target.value;
+      sendVolume(level);
     });
     function showCtrlMsg(msg){ controlError.textContent=msg; setTimeout(()=>controlError.textContent='',2000); }
     async function waitForIdle(timeout=4000,interval=120){
@@ -1806,7 +2239,7 @@
       return false;
     }
 
-    /* ── Progress ─────────────────────────────── */
+    /* ── Progress ── */
     progressInput.addEventListener('mousedown',()=>isSeeking=true);
     progressInput.addEventListener('touchstart',()=>isSeeking=true);
     progressInput.addEventListener('input',()=>{ curTimeEl.textContent=fmt(Number(progressInput.value)); });
@@ -1823,25 +2256,36 @@
       curTimeEl.textContent=fmt(pos); totalTimeEl.textContent=fmt(dur);
     }
 
-    /* ── Visualizer ───────────────────────────── */
+    /* ── Visualizer ── */
     const vizEl = el('vizBars');
     for(let i=0;i<8;i++){ const b=document.createElement('div'); b.className='vb'; vizEl.appendChild(b); }
     const vBars=[...vizEl.querySelectorAll('.vb')];
     let vizFrame=0;
     function animViz(playing){ if(!playing){ vBars.forEach(b=>b.style.height='3px'); return; } vBars.forEach(b=>b.style.height=(3+Math.random()*11)+'px'); }
 
-    /* ── rAF tick ─────────────────────────────── */
-    let lastTickPos=-1, lastTickStatus='';
-    function tick(now){
+    /* ── rAF tick — drives progress bar AND lyrics sync ── */
+    let lastTickPos = -1, lastTickStatus = '';
+    let lastServerPos = 0; // track last confirmed server position to detect seeks
+    function tick(now) {
       requestAnimationFrame(tick);
-      const elapsed=(Date.now()-lastUpdateTs)/1000;
-      const proj=lastStatus==='playing'&&!isSeeking?lastPos+elapsed:lastPos;
-      if(Math.abs(proj-lastTickPos)>0.1||lastStatus!==lastTickStatus){ setProgress(proj,lastDur); lastTickPos=proj; lastTickStatus=lastStatus; }
-      if(now-vizFrame>120){ animViz(lastStatus==='playing'); vizFrame=now; }
+      const elapsed = (Date.now() - lastUpdateTs) / 1000;
+      const proj = lastStatus === 'playing' && !isSeeking ? lastPos + elapsed : lastPos;
+
+      if (Math.abs(proj - lastTickPos) > 0.1 || lastStatus !== lastTickStatus) {
+        setProgress(proj, lastDur);
+        lastTickPos = proj;
+        lastTickStatus = lastStatus;
+      }
+      if (now - vizFrame > 120) { animViz(lastStatus === 'playing'); vizFrame = now; }
+
+      // Drive lyrics sync every frame — binary search is cheap, DOM update only on line change
+      if (syncedLines.length && lastStatus === 'playing') {
+        updateLyricHighlight(proj + lyricsOffset);
+      }
     }
     requestAnimationFrame(tick);
 
-    /* ── Status polling ───────────────────────── */
+    /* ── Status polling ── */
     function setAdaptivePoll(status){
       clearInterval(pollInterval);
       const interval=status==='playing'?1200:status==='paused'?3000:5000;
@@ -1851,29 +2295,61 @@
       try{ const d=await api('/api/status'); updatePlayerUI(d.result||{}); }catch{}
     }
     function updatePlayerUI(s){
-      const st=s.status||'idle';
-      const prevStatus=lastStatus;
-      lastStatus=st; lastPos=s.position??0; lastDur=s.durationSeconds||s.meta?.durationSeconds||0; lastUpdateTs=Date.now();
-      if(st!==prevStatus){
+      const st = s.status || 'idle';
+      const prevStatus = lastStatus;
+      const prevPos = lastPos;
+      lastStatus = st;
+      lastPos = s.position ?? (prevStatus === 'playing' ? lastPos + (Date.now() - lastUpdateTs) / 1000 : lastPos);
+      lastDur = s.durationSeconds || s.meta?.durationSeconds || lastDur;
+      lastUpdateTs = Date.now();
+
+      if (st !== prevStatus) {
         setAdaptivePoll(st);
-        playPauseBtn.innerHTML=st==='playing'?'<i class="ph ph-pause"></i>':'<i class="ph ph-play"></i>';
-        npDot.className='dot'+(st==='playing'?'':st==='paused'?' paused':' idle');
-        npStatusText.textContent=st.toUpperCase();
+        playPauseBtn.innerHTML = st === 'playing' ? '<i class="ph ph-pause"></i>' : '<i class="ph ph-play"></i>';
+        npDot.className = 'dot' + (st === 'playing' ? '' : st === 'paused' ? ' paused' : ' idle');
+        npStatusText.textContent = st.toUpperCase();
+        updateMediaSessionState(st);
       }
-      if(s.meta?.id) playingId=s.meta.id;
-      if(s.meta?.title&&s.meta.title!==currentTitle){
-        currentTitle=s.meta.title||''; currentUploader=s.meta.uploader||''; currentThumb=s.meta.thumbnail||'';
-        npTitle.textContent=currentTitle||'Nothing playing'; npUploader.textContent=currentUploader; npThumbnail.src=currentThumb;
+
+      // Detect seek: server position jumped more than 2s from our projection — re-anchor lyrics immediately
+      if (syncedLines.length && s.position != null) {
+        const projected = prevPos + (Date.now() - lastUpdateTs) / 1000;
+        if (Math.abs(s.position - projected) > 2) {
+          lastLyrIdx = -1; // Force re-highlight
+          updateLyricHighlight(s.position + lyricsOffset, true);
+        }
+      }
+
+      if (s.meta?.id) {
+        const newId = s.meta.id;
+        if (newId !== playingId) {
+          playingId = newId;
+          onTrackChanged(newId);
+          // Prefetch next track metadata — use the raw ID, normalizeTarget handles the rest
+          setTimeout(() => schedulePrefetch(), 1500);
+        }
+      }
+
+      if (s.meta?.title && s.meta.title !== currentTitle) {
+        currentTitle = s.meta.title || ''; currentUploader = s.meta.uploader || ''; currentThumb = s.meta.thumbnail || '';
+        npTitle.textContent = currentTitle || 'Nothing playing'; npUploader.textContent = currentUploader;
+        if (s.meta.thumbnail) npThumbnail.src = s.meta.thumbnail;
         rpAdd(s.meta); renderRecentStrip();
+        updateMediaSession(s.meta);
+        if (playingId && !lyricsCache.has(playingId)) {
+          loadLyrics(currentTitle, currentUploader, playingId);
+        }
       }
-      if(!s.meta){ npTitle.textContent='Nothing playing'; npUploader.textContent=''; currentTitle=''; currentUploader=''; currentThumb=''; }
-      if(gqActive&&prevStatus==='playing'&&st==='idle'&&!pendingId) advanceQueue();
+      if (!s.meta) { npTitle.textContent = 'Nothing playing'; npUploader.textContent = ''; currentTitle = ''; currentUploader = ''; currentThumb = ''; }
+      if (gqActive && prevStatus === 'playing' && st === 'idle' && !pendingId) advanceQueue();
+      updateMobileBar(s.meta, st, lastPos, lastDur);
     }
 
-    /* ── Queue ────────────────────────────────── */
+    /* ── Queue ── */
     function addToQueue(item){
       if(generalQueue.some(t=>t.id===item.id)) return;
       generalQueue.push({id:item.id,title:item.title,uploader:item.uploader||'',duration:item.duration,thumbnail:item.thumbnail});
+      saveQueue();
       renderQueuePanel();
       toast(`Added: ${item.title}`, 'info');
       const stab=document.querySelector('[data-stab="queue"]');
@@ -1882,12 +2358,13 @@
     }
     function advanceQueue(){
       gqIdx++;
-      if(gqIdx>=generalQueue.length){ gqActive=false; gqIdx=0; renderQueuePanel(); return; }
+      if(gqIdx>=generalQueue.length){ gqActive=false; gqIdx=0; saveQueue(); renderQueuePanel(); return; }
+      saveQueue();
       renderQueuePanel();
       const next=generalQueue[gqIdx]; if(next) internalPlay(next.id);
     }
 
-    /* ── Queue rendering with drag-and-drop ─────── */
+    /* ── FIX: Queue rendering with proper thumbnail handling ── */
     function renderQueuePanel(){
       sideQueue.innerHTML='';
       if(!generalQueue.length){
@@ -1898,7 +2375,7 @@
       hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
       hdr.innerHTML=`<span style="font-size:11px;color:var(--text-3);font-family:var(--mono)">${generalQueue.length} track${generalQueue.length>1?'s':''} · drag to reorder</span>`;
       const clearBtn=document.createElement('button'); clearBtn.className='btn btn-ghost btn-sm'; clearBtn.textContent='Clear';
-      clearBtn.addEventListener('click',()=>{ generalQueue=[]; gqActive=false; gqIdx=0; renderQueuePanel(); });
+      clearBtn.addEventListener('click',()=>{ generalQueue=[]; gqActive=false; gqIdx=0; saveQueue(); renderQueuePanel(); });
       hdr.appendChild(clearBtn); sideQueue.appendChild(hdr);
 
       let dragSrc=null;
@@ -1921,13 +2398,13 @@
             else if(dragSrc<gqIdx&&i>=gqIdx) gqIdx--;
             else if(dragSrc>gqIdx&&i<=gqIdx) gqIdx++;
           }
-          // Best-effort backend sync
           api('/api/queue/reorder',{method:'POST',body:JSON.stringify({from:dragSrc,to:i})}).catch(()=>{});
           dragSrc=null; renderQueuePanel();
         });
         const handle=document.createElement('span'); handle.className='drag-handle'; handle.title='Drag to reorder'; handle.innerHTML='<i class="ph ph-dots-six-vertical"></i>';
         const num=document.createElement('span'); num.className='queue-num'; num.textContent=i+1;
-        const img=document.createElement('img'); img.loading='lazy'; img.src=t.thumbnail||''; img.alt=''; img.width=48; img.height=28;
+        // FIX: use makeThumb — no broken icons for missing thumbnails
+        const img=makeThumb(t.thumbnail, null, null);
         const info=document.createElement('div'); info.className='side-item-info';
         const tt=document.createElement('div'); tt.className='side-item-title'; tt.textContent=t.title;
         const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=t.uploader||'';
@@ -1943,7 +2420,7 @@
       sideQueue.appendChild(frag);
     }
 
-    /* ── Recommendations ──────────────────────── */
+    /* ── Recommendations ── */
     async function loadRecs(title,uploader){
       sideRecs.innerHTML='<div class="muted" style="font-size:11px;padding:8px">Loading…</div>';
       try{
@@ -1957,7 +2434,8 @@
       const frag=document.createDocumentFragment();
       slice.forEach(item=>{
         const row=document.createElement('div'); row.className='side-item';
-        const img=document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt=''; img.width=48; img.height=28;
+        // FIX: use makeThumb
+        const img=makeThumb(item.thumbnail, null, null);
         const info=document.createElement('div'); info.className='side-item-info';
         const tt=document.createElement('div'); tt.className='side-item-title'; tt.textContent=item.title||'';
         const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=item.uploader||'';
@@ -1974,12 +2452,12 @@
       });
       sideRecs.appendChild(frag); recsIdx+=slice.length;
     }
-    el('sideRecs').addEventListener('scroll',()=>{
-      const e2=el('sideRecs');
+    el('sidebarContent').addEventListener('scroll',()=>{
+      const e2=el('sidebarContent');
       if(e2.scrollTop+e2.clientHeight>=e2.scrollHeight-60&&recsIdx<allRecs.length) renderRecsChunk();
     });
 
-    /* ── History ──────────────────────────────── */
+    /* ── FIX: History — use makeThumb for proper thumbnail handling ── */
     async function loadHistory(){
       try{
         const d=await api('/api/history'); const h=d.history||[];
@@ -1988,7 +2466,8 @@
         const frag=document.createDocumentFragment();
         h.forEach(item=>{
           const row=document.createElement('div'); row.className='side-item';
-          const img=document.createElement('img'); img.loading='lazy'; img.src=item.thumbnail||''; img.alt=''; img.width=48; img.height=28;
+          // FIX: makeThumb handles missing/empty thumbnails cleanly
+          const img=makeThumb(item.thumbnail, null, null);
           const info=document.createElement('div'); info.className='side-item-info';
           const tt=document.createElement('div'); tt.className='side-item-title'; tt.textContent=item.title;
           const su=document.createElement('div'); su.className='side-item-sub'; su.textContent=item.uploader||'';
@@ -2007,14 +2486,12 @@
       }catch{}
     }
 
-    /* ── Playlists ────────────────────────────── */
+    /* ── Playlists ── */
     function buildPlaylistCollage(id, placeholder, tracks) {
-      // tracks may be provided directly or fetched
       async function render(tks) {
         const thumbs = tks.filter(t=>t.thumbnail).slice(0,4).map(t=>t.thumbnail);
-        if (!thumbs.length) return; // keep placeholder
+        if (!thumbs.length) return;
         const collage = document.createElement('div'); collage.className='pl-collage';
-        // Fill all 4 cells (repeat last thumb if fewer than 4)
         for (let i=0;i<4;i++) {
           const img=document.createElement('img'); img.src=thumbs[i]||thumbs[thumbs.length-1]; img.alt='';
           img.onerror=()=>{ img.style.background='var(--surface-3)'; img.src=''; };
@@ -2038,7 +2515,6 @@
       playlists.forEach(pl=>{
         const card=document.createElement('div'); card.className='pl-card';
         const head=document.createElement('div'); head.className='pl-card-head';
-        // Cover art placeholder — replaced with real image after tracks load
         const coverEl=document.createElement('div'); coverEl.className='pl-cover-ph'; coverEl.innerHTML='<i class="ph ph-music-note" style="font-size:18px;color:var(--text-3)"></i>'; coverEl.dataset.plid=pl.id;
         const nameBtn=document.createElement('button'); nameBtn.className='pl-card-name'; nameBtn.textContent=pl.name;
         nameBtn.title='Click to expand, double-click to rename';
@@ -2061,7 +2537,6 @@
           card.appendChild(tracks);
           loadPlaylistTracks(pl.id,tracks,coverEl);
         } else {
-          // Build collage from coverUrl or fetch track thumbnails
           buildPlaylistCollage(pl.id, coverEl);
         }
         frag.appendChild(card);
@@ -2072,7 +2547,6 @@
     async function loadPlaylistTracks(id,container,coverEl){
       try{
         const d=await api(`/api/playlists/${id}`); const tracks=d.playlist?.tracks||[];
-        // Build collage from actual tracks
         if(coverEl) buildPlaylistCollage(id, coverEl, tracks);
         container.innerHTML='';
         if(!tracks.length){container.innerHTML='<div class="muted" style="font-size:11px">No tracks.</div>';return;}
@@ -2119,7 +2593,7 @@
     }
     function shuffle(arr){ for(let i=arr.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[arr[i],arr[j]]=[arr[j],arr[i]];} }
 
-    /* ── AI Chat ──────────────────────────────── */
+    /* ── AI Chat ── */
     const chatPanel=el('chatPanel');
     el('chatToggle').addEventListener('click',()=>chatPanel.classList.toggle('open'));
     document.addEventListener('click',e=>{
@@ -2152,7 +2626,8 @@
               if(resp.result?.meta){
                 const meta=resp.result.meta;
                 currentTitle=meta.title||query; currentUploader=meta.uploader||''; currentThumb=meta.thumbnail||'';
-                npTitle.textContent=currentTitle; npUploader.textContent=currentUploader; npThumbnail.src=currentThumb;
+                npTitle.textContent=currentTitle; npUploader.textContent=currentUploader;
+                if(meta.thumbnail) npThumbnail.src=meta.thumbnail;
                 if(!generalQueue.some(t=>t.id===meta.id)){ generalQueue.push({id:meta.id,title:meta.title,uploader:meta.uploader||'',duration:meta.duration,thumbnail:meta.thumbnail}); gqIdx=generalQueue.length-1; gqActive=true; renderQueuePanel(); }
                 rpAdd(meta); renderRecentStrip();
               }
@@ -2172,20 +2647,199 @@
       }catch(err){ typing.remove(); appendMsg('ai',`Error: ${err.message}`); }
       el('chatSend').disabled=false; el('chatMsgs').scrollTop=9999;
     }
-    function appendMsg(role,text){
-      const div=document.createElement('div'); div.className='msg '+role; div.textContent=text;
+    function appendMsg(role,text,isTyping){
+      const div=document.createElement('div'); div.className='msg '+role+(isTyping?' typing':''); div.textContent=text;
       el('chatMsgs').appendChild(div); el('chatMsgs').scrollTop=9999; return div;
     }
     el('chatSend').addEventListener('click',sendChat);
     el('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendChat(); });
 
-    /* ── Boot ─────────────────────────────────── */
+    /* ── Boot ── */
+    (function() { const s = el('recentStrip'); if (s) s.style.display = 'none'; })();
+
+    // ── Persistent queue — restore from localStorage ──────────────────────
+    {
+      const saved = lsGet('rq_queue', null);
+      if (saved && Array.isArray(saved.queue) && saved.queue.length) {
+        generalQueue = saved.queue;
+        gqIdx = saved.idx || 0;
+        gqActive = false; // Don't auto-play on restore, just show the queue
+        renderQueuePanel();
+      }
+    }
+
+    function saveQueue() {
+      lsSet('rq_queue', { queue: generalQueue, idx: gqIdx });
+      api('/api/queue/sync', { method: 'POST', body: JSON.stringify({ queue: generalQueue }) }).catch(() => {});
+    }
+
+    // Intercept queue saves at the source
+
+    // ── SSE: track-ended event — advance queue instantly, no polling gap ──
+    function connectSSE() {
+      const sse = new EventSource('/api/events');
+      sse.addEventListener('track-ended', () => {
+        if (gqActive && !pendingId) {
+          advanceQueue();
+        } else if (!gqActive) {
+          // Even outside queue mode, update UI to idle state
+          refreshStatus();
+        }
+      });
+      sse.addEventListener('track-started', () => {
+        refreshStatus();
+      });
+      sse.onerror = () => {
+        // SSE dropped (server restart) — reconnect after 3s
+        sse.close();
+        setTimeout(connectSSE, 3000);
+      };
+    }
+    connectSSE();
+
+    // ── Prefetch next track metadata while current plays ──────────────────
+    function prefetchNext(id) {
+      if (!id) return;
+      api('/api/prefetch', { method: 'POST', body: JSON.stringify({ id }) }).catch(() => {});
+    }
+
+    function schedulePrefetch() {
+      if (!gqActive || gqIdx + 1 >= generalQueue.length) return;
+      const next = generalQueue[gqIdx + 1];
+      if (next?.id) prefetchNext(next.id);
+    }
+
+    // ── Media Session API — OS-level media controls ────────────────────────
+    function updateMediaSession(meta) {
+      if (!('mediaSession' in navigator)) return;
+      if (!meta?.title) return;
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: meta.title || 'Unknown',
+        artist: meta.uploader || '',
+        artwork: meta.thumbnail ? [{ src: meta.thumbnail, sizes: '320x180', type: 'image/jpeg' }] : []
+      });
+      navigator.mediaSession.setActionHandler('play', () => postCtrl('/api/resume'));
+      navigator.mediaSession.setActionHandler('pause', () => postCtrl('/api/pause'));
+      navigator.mediaSession.setActionHandler('previoustrack', () => el('prevBtn').click());
+      navigator.mediaSession.setActionHandler('nexttrack', () => el('nextBtn').click());
+    }
+    function updateMediaSessionState(status) {
+      if (!('mediaSession' in navigator)) return;
+      navigator.mediaSession.playbackState = status === 'playing' ? 'playing' : status === 'paused' ? 'paused' : 'none';
+    }
+
+    // ── Mobile mini-player ─────────────────────────────────────────────────
+    function updateMobileBar(meta, status, pos, dur) {
+      const bar = el('mobilebar');
+      if (!bar) return;
+      const thumb = el('mobilebarThumb');
+      const title = el('mobilebarTitle');
+      const sub = el('mobilebarSub');
+      const prog = el('mobilebarProg');
+      const btn = el('mobilePlayBtn');
+
+      if (meta?.title) {
+        title.textContent = meta.title;
+        sub.textContent = meta.uploader || '—';
+        if (meta.thumbnail && thumb.src !== meta.thumbnail) thumb.src = meta.thumbnail;
+      } else {
+        title.textContent = 'Nothing playing';
+        sub.textContent = '—';
+      }
+      btn.innerHTML = status === 'playing' ? '<i class="ph ph-pause"></i>' : '<i class="ph ph-play"></i>';
+      if (dur > 0 && pos >= 0) {
+        const pct = Math.min((pos / dur) * 100, 100);
+        prog.style.transform = `scaleX(${pct / 100})`;
+      } else {
+        prog.style.transform = 'scaleX(0)';
+      }
+    }
+
+    // Wire mobile controls
+    el('mobilePlayBtn').addEventListener('click', () => {
+      if (lastStatus === 'playing') { lastStatus='paused'; el('mobilePlayBtn').innerHTML='<i class="ph ph-play"></i>'; postCtrl('/api/pause'); }
+      else if (lastStatus === 'paused') { lastStatus='playing'; el('mobilePlayBtn').innerHTML='<i class="ph ph-pause"></i>'; postCtrl('/api/resume'); }
+      else {
+        // Idle — try to play from queue or recently played
+        if (generalQueue.length && gqIdx < generalQueue.length) {
+          gqActive = true;
+          const track = generalQueue[gqIdx];
+          if (track) handlePlay(track.id, track);
+        } else if (recentlyPlayed.length) {
+          handlePlay(recentlyPlayed[0].id, recentlyPlayed[0]);
+        }
+      }
+    });
+    el('mobilePrevBtn').addEventListener('click', () => el('prevBtn').click());
+    el('mobileNextBtn').addEventListener('click', () => el('nextBtn').click());
+
+    // Mobile tab bar
+    document.querySelectorAll('#mobileTabBar button[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#mobileTabBar button').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        // Sync with main tab nav
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        const mainTab = document.querySelector(`.tab-btn[data-tab="${btn.dataset.tab}"]`);
+        if (mainTab) { mainTab.classList.add('active'); mainTab.click(); }
+      });
+    });
+    const mobileSidebarBtn = el('mobileSidebarBtn');
+    if (mobileSidebarBtn) {
+      mobileSidebarBtn.addEventListener('click', () => {
+        const sidebar = el('sidebar');
+        sidebar.classList.toggle('mobile-open');
+        document.querySelectorAll('#mobileTabBar button').forEach(b=>b.classList.remove('active'));
+        mobileSidebarBtn.classList.add('active');
+      });
+    }
+    const sidebarCloseBtn = el('sidebarCloseBtn');
+    if (sidebarCloseBtn) {
+      sidebarCloseBtn.addEventListener('click', () => {
+        el('sidebar').classList.remove('mobile-open');
+      });
+    }
+
+    // ── Error recovery UI ─────────────────────────────────────────────────
+    async function checkSetup() {
+      try {
+        const d = await api('/api/status');
+        el('setupBanner').classList.remove('visible');
+      } catch(err) {
+        const msg = err.message || '';
+        if (msg.includes('yt-dlp') || msg.includes('mpv')) {
+          el('setupBannerMsg').textContent = err.message;
+          el('setupBanner').classList.add('visible');
+        }
+      }
+    }
+
+    // FIX: Populate recently played strip from server history on every boot.
+    async function initRecentStrip() {
+      try {
+        const d = await api('/api/history');
+        const serverHistory = (d.history || []).slice(0, 15);
+        if (serverHistory.length) {
+          const serverIds = new Set(serverHistory.map(h => h.id));
+          const localOnly = recentlyPlayed.filter(r => !serverIds.has(r.id));
+          recentlyPlayed = [...serverHistory, ...localOnly].slice(0, 15);
+          lsSet('rq_recent', recentlyPlayed);
+        }
+      } catch {
+        // Server unavailable — fall back to localStorage
+      }
+      renderRecentStrip();
+    }
+
     refreshStatus();
     loadPlaylists();
     loadHistory();
-    renderRecentStrip();
+    initRecentStrip();
+    checkSetup();
     setAdaptivePoll('idle');
     setInterval(()=>{ if(!document.hidden) loadHistory(); }, 15000);
+    // Persist queue changes periodically
+    setInterval(saveQueue, 5000);
     renderQueuePanel();
     </script>
   </body>
