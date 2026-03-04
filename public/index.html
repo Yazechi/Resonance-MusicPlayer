@@ -1301,6 +1301,7 @@
     let lastStatus = 'idle';
     let lastPos = 0, lastDur = 0, lastUpdateTs = Date.now();
     let isSeeking = false;
+    let positionConfirmed = false; // true once server reports a real position
     let playingId = null, pendingId = null;
     let currentTitle = '', currentUploader = '', currentThumb = '';
     let playlists = [];
@@ -2073,6 +2074,7 @@ async function lrclibSearch(ct, ca) {
 
       lastPos = 0; 
       lastDur = itemMeta ? (itemMeta.durationSeconds || 0) : 0;
+      positionConfirmed = false; // Don't project position until server confirms
       if (itemMeta) {
         npTitle.textContent=itemMeta.title||'Loading…';
         npUploader.textContent=itemMeta.uploader||'';
@@ -2107,6 +2109,11 @@ async function lrclibSearch(ct, ca) {
         }
         setAdaptivePoll('playing');
         schedulePrefetch(); // Pre-warm next track metadata immediately
+        // Apply saved volume once IPC is ready (mpv may have just started)
+        setTimeout(() => {
+          const vol = Number(el('volume').value);
+          api('/api/volume', { method: 'POST', body: JSON.stringify({ level: vol }) }).catch(() => {});
+        }, 800);
         if (currentTitle) { loadRecs(currentTitle, currentUploader); }
         // Pre-fetch lyrics silently (will be cached for instant display)
         if (playingId && !lyricsCache.has(playingId)) {
@@ -2128,6 +2135,7 @@ async function lrclibSearch(ct, ca) {
       pendingId = id;
       lastPos = 0;
       lastDur = 0;
+      positionConfirmed = false;
       try {
         await api('/api/play', { method: 'POST', body: JSON.stringify({ id }) });
         playingId = id;
@@ -2169,6 +2177,7 @@ async function lrclibSearch(ct, ca) {
         await api('/api/stop',{method:'POST'});
         lastStatus='idle'; playingId=null; gqActive=false;
         lastPos=0; lastDur=0; lastUpdateTs=Date.now();
+        positionConfirmed=false;
         lyricsLoadedForId=null; syncedLines=[]; lastLyrIdx=-1;
         playPauseBtn.innerHTML='<i class="ph ph-play"></i>';
         el('mobilePlayBtn').innerHTML='<i class="ph ph-play"></i>';
@@ -2269,17 +2278,18 @@ async function lrclibSearch(ct, ca) {
     function tick(now) {
       requestAnimationFrame(tick);
       const elapsed = (Date.now() - lastUpdateTs) / 1000;
-      const proj = lastStatus === 'playing' && !isSeeking ? lastPos + elapsed : lastPos;
+      // Only project position forward if server has confirmed a real position
+      const proj = lastStatus === 'playing' && !isSeeking && positionConfirmed ? lastPos + elapsed : lastPos;
 
       if (Math.abs(proj - lastTickPos) > 0.1 || lastStatus !== lastTickStatus) {
         setProgress(proj, lastDur);
         lastTickPos = proj;
         lastTickStatus = lastStatus;
       }
-      if (now - vizFrame > 120) { animViz(lastStatus === 'playing'); vizFrame = now; }
+      if (now - vizFrame > 120) { animViz(lastStatus === 'playing' && positionConfirmed); vizFrame = now; }
 
       // Drive lyrics sync every frame — binary search is cheap, DOM update only on line change
-      if (syncedLines.length && lastStatus === 'playing') {
+      if (syncedLines.length && lastStatus === 'playing' && positionConfirmed) {
         updateLyricHighlight(proj + lyricsOffset);
       }
     }
@@ -2299,17 +2309,30 @@ async function lrclibSearch(ct, ca) {
       const prevStatus = lastStatus;
       const prevPos = lastPos;
       lastStatus = st;
-      lastPos = s.position ?? (prevStatus === 'playing' ? lastPos + (Date.now() - lastUpdateTs) / 1000 : lastPos);
+
+      // Only confirm position when server actually reports a numeric position (not null)
+      if (s.position != null) {
+        positionConfirmed = true;
+        lastPos = s.position;
+      } else if (positionConfirmed && prevStatus === 'playing') {
+        // Server returned null position but we were previously confirmed — interpolate
+        lastPos = prevPos + (Date.now() - lastUpdateTs) / 1000;
+      }
+      // Reset confirmation when going idle
+      if (st === 'idle') positionConfirmed = false;
+
       lastDur = s.durationSeconds || s.meta?.durationSeconds || lastDur;
       lastUpdateTs = Date.now();
 
       if (st !== prevStatus) {
         setAdaptivePoll(st);
-        playPauseBtn.innerHTML = st === 'playing' ? '<i class="ph ph-pause"></i>' : '<i class="ph ph-play"></i>';
-        npDot.className = 'dot' + (st === 'playing' ? '' : st === 'paused' ? ' paused' : ' idle');
-        npStatusText.textContent = st.toUpperCase();
         updateMediaSessionState(st);
       }
+      // Always sync play/pause button and status display with server state
+      playPauseBtn.innerHTML = st === 'playing' ? '<i class="ph ph-pause"></i>' : '<i class="ph ph-play"></i>';
+      el('mobilePlayBtn').innerHTML = st === 'playing' ? '<i class="ph ph-pause"></i>' : '<i class="ph ph-play"></i>';
+      npDot.className = 'dot' + (st === 'playing' ? '' : st === 'paused' ? ' paused' : ' idle');
+      npStatusText.textContent = st === 'idle' ? 'IDLE' : st.toUpperCase();
 
       // Detect seek: server position jumped more than 2s from our projection — re-anchor lyrics immediately
       if (syncedLines.length && s.position != null) {
@@ -2325,22 +2348,25 @@ async function lrclibSearch(ct, ca) {
         if (newId !== playingId) {
           playingId = newId;
           onTrackChanged(newId);
-          // Prefetch next track metadata — use the raw ID, normalizeTarget handles the rest
           setTimeout(() => schedulePrefetch(), 1500);
         }
       }
 
-      if (s.meta?.title && s.meta.title !== currentTitle) {
+      // Always sync track info from server when meta is present
+      if (s.meta?.title) {
+        const titleChanged = s.meta.title !== currentTitle;
         currentTitle = s.meta.title || ''; currentUploader = s.meta.uploader || ''; currentThumb = s.meta.thumbnail || '';
-        npTitle.textContent = currentTitle || 'Nothing playing'; npUploader.textContent = currentUploader;
+        npTitle.textContent = currentTitle; npUploader.textContent = currentUploader;
         if (s.meta.thumbnail) npThumbnail.src = s.meta.thumbnail;
-        rpAdd(s.meta); renderRecentStrip();
-        updateMediaSession(s.meta);
-        if (playingId && !lyricsCache.has(playingId)) {
-          loadLyrics(currentTitle, currentUploader, playingId);
+        if (titleChanged) {
+          rpAdd(s.meta); renderRecentStrip();
+          updateMediaSession(s.meta);
+          if (playingId && !lyricsCache.has(playingId)) {
+            loadLyrics(currentTitle, currentUploader, playingId);
+          }
         }
       }
-      if (!s.meta) { npTitle.textContent = 'Nothing playing'; npUploader.textContent = ''; currentTitle = ''; currentUploader = ''; currentThumb = ''; }
+      if (!s.meta && st === 'idle') { npTitle.textContent = 'Nothing playing'; npUploader.textContent = ''; currentTitle = ''; currentUploader = ''; currentThumb = ''; }
       if (gqActive && prevStatus === 'playing' && st === 'idle' && !pendingId) advanceQueue();
       updateMobileBar(s.meta, st, lastPos, lastDur);
     }

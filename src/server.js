@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import "dotenv/config";
-import { play, pause, resume, stop, setVolume, getStatus, search, seek, related } from "./player.js";
+import { play, pause, resume, stop, setVolume, getStatus, search, seek, related, prefetchNext, playerEvents } from "./player.js";
 import { setEq } from "./player.js";
 import { recordPlay, getHistory, chat } from "./ai.js";
 import { listPlaylists, getPlaylist, createPlaylist, updatePlaylist, deletePlaylist, addTrack, removeTrack, reorderTrack } from "./playlist.js";
@@ -38,11 +38,14 @@ let serverQueue = [];
 app.get("/api/status", async (req, res) => {
   try {
     const result = await getStatus();
-    const json = JSON.stringify({ ok: true, result });
 
-    // Only recompute ETag when value changes
-    if (json !== lastStatusJson) {
-      lastStatusJson = json;
+    // Exclude `position` from ETag — it changes every second and would defeat caching.
+    // We only want 304 when the track, status, and duration haven't changed.
+    const { position: _pos, ...etagResult } = result;
+    const etagJson = JSON.stringify({ ok: true, result: etagResult });
+
+    if (etagJson !== lastStatusJson) {
+      lastStatusJson = etagJson;
       lastStatusETag = `"${Date.now().toString(36)}"`;
     }
 
@@ -53,6 +56,7 @@ app.get("/api/status", async (req, res) => {
       return res.status(304).end();
     }
 
+    const json = JSON.stringify({ ok: true, result });
     res.setHeader("Content-Type", "application/json");
     res.end(json);
   } catch (err) {
@@ -150,23 +154,83 @@ app.get("/api/history", (_req, res) => {
   res.json({ ok: true, history: getHistory(20) });
 });
 
-// Lyrics proxy endpoint — tries lrclib then lyrics.ovh
+// ── SSE: push track-ended instantly so frontend advances queue without polling lag ──
+app.get("/api/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
+  res.flushHeaders();
+
+  // Send a heartbeat every 25s to prevent proxy timeouts
+  const heartbeat = setInterval(() => {
+    if (!res.writableEnded) res.write(": heartbeat\n\n");
+  }, 25000);
+
+  const onTrackEnded = () => {
+    if (!res.writableEnded) res.write(`event: track-ended\ndata: {}\n\n`);
+  };
+  const onTrackStarted = (data) => {
+    if (!res.writableEnded) res.write(`event: track-started\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  playerEvents.on("track-ended", onTrackEnded);
+  playerEvents.on("track-started", onTrackStarted);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    playerEvents.off("track-ended", onTrackEnded);
+    playerEvents.off("track-started", onTrackStarted);
+  });
+});
+
+// ── Prefetch: pre-resolve URL+meta for next track while current one plays ──
+app.post("/api/prefetch", async (req, res) => {
+  try {
+    const { id } = req.body || {};
+    if (!id) return res.json({ ok: true, skipped: true });
+    // Fire-and-forget — don't await, just start the background resolution
+    prefetchNext(id).catch(() => {});
+    res.json({ ok: true });
+  } catch (err) {
+    res.json({ ok: true, skipped: true }); // Prefetch failures are always non-fatal
+  }
+});
+
+// Lyrics proxy endpoint — tries lrclib exact, lrclib search, then lyrics.ovh
 app.get("/api/lyrics", async (req, res) => {
   try {
     const title = req.query.title || req.query.track || "";
     const artist = req.query.artist || req.query.uploader || "";
     if (!title) return sendError(res, new Error("title query param required"), 400);
-    // Try lrclib first
-    const q = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`;
+
+    // 1. lrclib exact GET (fastest, most accurate)
     try {
-      const r = await fetch(q);
+      const r = await fetch(`https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`);
       if (r.ok) {
         const d = await r.json();
-        const lyrics = d.plainLyrics || (d.syncedLyrics ? d.syncedLyrics.replace(/\[\d+:\d+\.\d+\]/g, "") : null);
-        if (lyrics) return res.json({ ok: true, source: 'lrclib', lyrics });
+        if (d.syncedLyrics) return res.json({ ok: true, source: 'lrclib-synced', lyrics: d.syncedLyrics });
+        if (d.plainLyrics)  return res.json({ ok: true, source: 'lrclib', lyrics: d.plainLyrics });
       }
     } catch {}
-    // Fallback to lyrics.ovh
+
+    // 2. lrclib fuzzy search (handles messy YouTube titles)
+    try {
+      const q = encodeURIComponent(`${artist} ${title}`.trim());
+      const r = await fetch(`https://lrclib.net/api/search?q=${q}`);
+      if (r.ok) {
+        const data = await r.json();
+        if (Array.isArray(data) && data.length) {
+          const best = data.find(t => t.syncedLyrics) || data.find(t => t.plainLyrics);
+          if (best) {
+            const lyrics = best.syncedLyrics || best.plainLyrics;
+            return res.json({ ok: true, source: best.syncedLyrics ? 'lrclib-synced' : 'lrclib', lyrics });
+          }
+        }
+      }
+    } catch {}
+
+    // 3. lyrics.ovh fallback
     try {
       const r2 = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
       if (r2.ok) {
@@ -174,6 +238,7 @@ app.get("/api/lyrics", async (req, res) => {
         if (d2.lyrics) return res.json({ ok: true, source: 'lyrics.ovh', lyrics: d2.lyrics });
       }
     } catch {}
+
     return sendError(res, new Error('Lyrics not found'), 404);
   } catch (err) { sendError(res, err); }
 });
@@ -181,7 +246,16 @@ app.get("/api/lyrics", async (req, res) => {
 // Simple queue endpoints to allow frontend reorder sync
 app.get("/api/queue", (_req, res) => { res.json({ ok: true, queue: serverQueue }); });
 
-app.post("/api/queue/reorder", express.json(), (req, res) => {
+app.post("/api/queue/sync", (req, res) => {
+  try {
+    const { queue } = req.body || {};
+    if (!Array.isArray(queue)) return sendError(res, new Error('queue array is required'), 400);
+    serverQueue = queue;
+    res.json({ ok: true, queue: serverQueue });
+  } catch (err) { sendError(res, err); }
+});
+
+app.post("/api/queue/reorder", (req, res) => {
   try {
     const { from, to } = req.body || {};
     if (from === undefined || to === undefined) return sendError(res, new Error('from and to are required'), 400);

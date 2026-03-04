@@ -19,6 +19,8 @@ A full-featured web-based music player that streams audio from YouTube, powered 
 | 🤖 **AI Recommendations** | Chat with Resonance AI to discover songs by mood, genre, or vibe |
 | 📝 **Listening History** | Automatically tracks plays to personalize future AI suggestions |
 | 🎵 **Related Music** | Sidebar with similar songs based on the currently playing track |
+| 📋 **Playlists** | Create, edit, and delete playlists; add, remove, and reorder tracks |
+| 🔀 **Queue** | Add songs to a temporary play queue without saving to a playlist |
 | 💻 **CLI Mode** | Command-line interface for quick terminal-based playback |
 | 🔌 **Stdio Server** | JSON-over-stdio protocol for integration with Copilot CLI or other tools |
 
@@ -257,6 +259,7 @@ OnlineMusicPlayer/
 │   ├── server.js            # Express HTTP server + REST API endpoints
 │   ├── player.js            # Playback engine (mpv spawn, IPC, yt-dlp search/metadata)
 │   ├── ai.js                # Google Gemini AI chat + listening history
+│   ├── playlist.js          # Playlist CRUD + track management (persisted to playlists.json)
 │   └── index.js             # CLI entry point + stdio JSON server
 ├── .env                     # Gemini API key (gitignored, create manually)
 ├── .gitignore               # Ignores node_modules, .env, logs
@@ -364,6 +367,27 @@ Content-Type: application/json
 
 ```
 GET /api/related?title=<song>&uploader=<artist>
+```
+
+### Playlists
+
+```
+GET    /api/playlists                              # List all playlists
+POST   /api/playlists          { "name": "...", "description": "..." }  # Create playlist
+GET    /api/playlists/:id                          # Get playlist with tracks
+PATCH  /api/playlists/:id      { "name": "..." }   # Update playlist
+DELETE /api/playlists/:id                          # Delete playlist
+POST   /api/playlists/:id/tracks   { "id": "...", "title": "..." }  # Add track
+DELETE /api/playlists/:id/tracks/:trackId          # Remove track
+PATCH  /api/playlists/:id/tracks/:trackId/reorder  { "newIndex": 0 }  # Reorder track
+```
+
+### Queue
+
+```
+GET  /api/queue                                    # Get current queue
+POST /api/queue/sync     { "queue": [...] }        # Sync full queue from client
+POST /api/queue/reorder  { "trackId": "...", "newIndex": 0 }  # Reorder queue item
 ```
 
 ### Listening History

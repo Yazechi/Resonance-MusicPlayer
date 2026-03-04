@@ -4,6 +4,18 @@ import { fileURLToPath } from "url";
 import crypto from "crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Derive a stable, non-expiring thumbnail URL from a YouTube video ID.
+ * CDN URLs with query params (sqp=, rs=) expire after a few hours.
+ * The standard i.ytimg.com/vi/{id}/mqdefault.jpg never expires.
+ */
+function stableThumbnail(id, fallbackUrl) {
+  if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) {
+    return `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+  }
+  return fallbackUrl || null;
+}
 const PLAYLISTS_PATH = path.join(__dirname, "..", "playlists.json");
 
 let playlists = [];
@@ -85,16 +97,17 @@ export function addTrack(playlistId, track) {
   if (!pl) throw new Error("Playlist not found");
   if (!track?.id || !track?.title) throw new Error("Track must have id and title");
   if (pl.tracks.some(t => t.id === track.id)) throw new Error("Track already in playlist");
+  const thumb = stableThumbnail(track.id, track.thumbnail);
   pl.tracks.push({
     id: track.id,
     title: track.title,
     uploader: track.uploader || "",
     duration: track.duration || null,
-    thumbnail: track.thumbnail || null,
+    thumbnail: thumb,
     addedAt: Date.now()
   });
-  // If playlist has no cover, use the first track's thumbnail
-  if (!pl.coverUrl && track.thumbnail) pl.coverUrl = track.thumbnail;
+  // If playlist has no cover, use the first track's stable thumbnail
+  if (!pl.coverUrl && thumb) pl.coverUrl = thumb;
   pl.updatedAt = Date.now();
   save();
   return pl;
