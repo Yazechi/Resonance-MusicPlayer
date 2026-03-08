@@ -468,16 +468,18 @@ export async function stop() {
 
   if (pendingPlayRequest) { pendingPlayRequest.cancelled = true; pendingPlayRequest = null; }
 
+  const proc = playerProcess;
+  playerProcess = null; // Clear immediately to prevent exit handler from emitting track-ended
+
   // Try graceful IPC quit first, before killing the process
   try { await sendMpv({ command: ["quit"] }); } catch {}
 
-  if (playerProcess) {
+  if (proc) {
     try {
-      playerProcess.kill("SIGTERM");
+      proc.kill("SIGTERM");
       await delay(20);
-      if (playerProcess && !playerProcess.killed) playerProcess.kill("SIGKILL");
+      if (proc && !proc.killed) proc.kill("SIGKILL");
     } catch {}
-    playerProcess = null;
   }
 
   cleanupIpc();
